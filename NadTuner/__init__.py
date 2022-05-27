@@ -107,11 +107,13 @@ class NadTuner:
                     break
                 else:
                     response = response + r
-
+            # Skip RDS Data
+            if response[2] == 83:
+                continue
             if response[2] == responsecode:
                 return response
             attempts += 1
-            # print(response)
+        return False
 
     def get_frequency(self, force=False):
         """
@@ -121,17 +123,20 @@ class NadTuner:
         """
         if not self.frequency or force:
             attempts = 0
-            while attempts < 10:
+            while attempts < 20:
                 response = self.serial_query(
                     self.getter.FM_FREQUENCY, responsecode=45)
-                if response:
-                    if response[5] == 2:
-                        freq_bytes = bytes([response[3], response[4]])
-                    else:
-                        freq_bytes = bytes([response[4], response[5]])
-                    self.frequency = int.from_bytes(freq_bytes, "little") / 100
-                attempts += 1
 
+                if response is False:
+                    continue
+                if response[5] == 2:
+                    freq_bytes = bytes([response[3], response[4]])
+                    self.frequency = int.from_bytes(freq_bytes, "little") / 100
+                else:
+                    freq_bytes = bytes([response[4], response[5]])
+                    self.frequency = int.from_bytes(freq_bytes, "little") / 100
+                break
+                attempts += 1
         return self.frequency
 
     def set_frequency(self, frequency):
