@@ -1,4 +1,5 @@
 from time import sleep
+
 import serial
 
 
@@ -24,7 +25,6 @@ class NadSetters:
 
     def __init__(self):
         self.AM = bytes([0x01, 0x16, 0x82, 0x02, 0x67])
-        self.BLEND = bytes([0x01, 0x16, 0x35, 0x02, 0xB4])
         self.BLEND_OFF = bytes([1, 21, 49, 94, 64, 2, 185])
         self.BLEND_ON = bytes([1, 21, 49, 94, 65, 2, 184])
         self.BRIGHTNESS_FULL = bytes([1, 21, 22, 94, 64, 2, 212])
@@ -67,13 +67,14 @@ class NadTuner:
         __init__
         :param port: serial port to use if the default=/dev/ttyUSB0 is not correct
         """
+
         self.__delay__ = 1 / 5
         self.__port__ = port
         self.__serial__ = serial.Serial(port, 9600,
                                         exclusive=False, )  # open serial port
         self.band = None
         self.blend = None
-        self.fmmute = None
+        self.mute = None
         self.frequency = None
         self.id = None
         self.power = None
@@ -177,6 +178,32 @@ class NadTuner:
 
         return self.frequency
 
+    def get_blend(self):
+        """
+        :returns: Blend
+        """
+
+        blend = self.serial_query(self.getter.BLEND, responsecode=49)
+
+        if blend[4] == 64:
+            self.blend = False
+        elif blend[4] == 65:
+            self.blend = True
+        return self.blend
+
+    def get_mute(self):
+        """
+        :returns: Blend
+        """
+
+        mute = self.serial_query(self.getter.FM_MUTE, responsecode=47)
+
+        if mute[4] == 64:
+            self.mute = False
+        elif mute[4] == 65:
+            self.mute = True
+        return self.mute
+
     def get_power(self):
         """
         :returns: Power
@@ -219,7 +246,7 @@ class NadTuner:
                 self.serial_send(self.setter.DIGIT_8)
             if c == "9":
                 self.serial_send(self.setter.DIGIT_9)
-            sleep(1/10)
+            sleep(1 / 10)
 
         self.frequency = frequency
         sleep(3)
@@ -309,9 +336,27 @@ class NadTuner:
 
     def set_blend_off(self):
         """
-        Enable FM Blend
+        Disable FM Blend
         """
 
         self.serial_send(self.setter.BLEND_OFF)
         self.blend = False
         return self.blend
+
+    def set_mute_off(self):
+        """
+        Disable FM Mute
+        """
+
+        self.serial_send(self.setter.FM_MUTE_OFF)
+        self.mute = False
+        return self.mute
+
+    def set_mute_on(self):
+        """
+        Disable FM Mute
+        """
+
+        self.serial_send(self.setter.FM_MUTE_ON)
+        self.mute = False
+        return self.mute
