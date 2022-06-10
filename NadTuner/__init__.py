@@ -1,8 +1,6 @@
 import serial
 from time import sleep
 
-DELAY = 0.2
-
 
 class NadGetters:
     """
@@ -10,7 +8,13 @@ class NadGetters:
     """
 
     def __init__(self):
+        self.AM_FREQUENCY = bytes([1, 20, 44, 2, 191])
+        self.BAND = bytes([1, 20, 43, 2, 192])
+        self.BLEND = bytes([1, 20, 49, 2, 186])
+        self.DEVICE_ID = bytes([1, 20, 20, 2, 215])
         self.FM_FREQUENCY = bytes([1, 20, 45, 2, 190])
+        self.FM_MUTE = bytes([1, 20, 47, 2, 188])
+        self.POWER = bytes([1, 20, 21, 2, 214])
 
 
 class NadSetters:
@@ -55,58 +59,67 @@ class NadSetters:
 
 class NadTuner:
     """
-    A class to communicate with NAD Tuners C-425 and C-426.
+    A class to communicate with NAD C-425 and C-426 tuners.
     """
 
     def __init__(self, port='/dev/ttyUSB0'):
         """
-        Open serial port
-        :param port:
+        __init__
+        :param port: serial port to use if the default=/dev/ttyUSB0 is not correct
         """
-
+        self.band = None
+        self.id = None
         self.power = None
         self.frequency = None
         self.blend = None
         self.fmmute = None
         self.__port__ = port
         self.__serial__ = serial.Serial(port, 9600,
-                                        timeout=1, exclusive=True)  # open serial port
+                                        exclusive=False, )  # open serial port
         self.setter = NadSetters()
         self.getter = NadGetters()
 
-    def serial_send(self, message):
+    def __read_bytes__(self):
+        """
+        Read command set of bytes
+        :return: the command set read
         """
 
-        :param message:
-        :return:
+        response = bytes()
+        while True:
+            r = self.__serial__.read(1)
+            if r == b'':
+                continue
+            elif r == b'\x01':
+                response = response + r
+            elif r == b'\x02':
+                response = response + r
+                r = self.__serial__.read(1)
+                response = response + r
+                break
+            else:
+                response = response + r
+        return response
+
+    def serial_send(self, message):
+        """
+        :param message: serial command in bytes to send
+        :return: None
         """
         self.__serial__.write(message)
         sleep(DELAY)
 
     def serial_query(self, message, responsecode):
         """
-
-        :param message:
-        :param responsecode:
-        :return:
+        :param message: command in bytes to send
+        :param responsecode: response code to wait for
+        :return: queury response bytes
         """
         self.__serial__.write(message)
+
         attempts = 0
         while attempts <= 5:
-            response = bytes()
-            while True:
-                r = self.__serial__.read(1)
-                if r == b'':
-                    continue
-                elif r == b'\x01':
-                    response = response + r
-                elif r == b'\x02':
-                    response = response + r
-                    r = self.__serial__.read(1)
-                    response = response + r
-                    break
-                else:
-                    response = response + r
+            response = self.__read_bytes__()
             # Skip RDS Data
             if response[2] == 83:
                 continue
@@ -115,12 +128,36 @@ class NadTuner:
             attempts += 1
         return False
 
-    def get_frequency(self, force=False):
+    def get_band(self):
+        """
+        Get the current operation band
+        :return: band
         """
 
-        :param force:
-        :return:
+        response = self.serial_query(self.getter.BAND, responsecode=43)
+        if response[4] == 64:
+            self.band = 'AM'
+        elif response[4] == 65:
+            self.band = 'FM'
+        return self.band
+
+    def get_device_id(self):
         """
+        Get the device id
+        :return: Device Id
+        """
+
+        self.id = self.serial_query(self.getter.DEVICE_ID, responsecode=20)[
+            3:7].decode('utf-8')
+        return self.id
+
+    def get_frequency_fm(self, force=False):
+        """
+        Get the current tuned FM Frequency
+        :param force: Force retrival
+        :return: Frequency
+        """
+
         if not self.frequency or force:
             attempts = 0
             while attempts < 20:
@@ -135,16 +172,31 @@ class NadTuner:
                 else:
                     freq_bytes = bytes([response[4], response[5]])
                     self.frequency = int.from_bytes(freq_bytes, "little") / 100
-                break
+                # break
                 attempts += 1
+
         return self.frequency
 
-    def set_frequency(self, frequency):
+    def get_power(self):
+        """
+        :returns: Power
         """
 
-        :param frequency:
-        :return:
+        power = self.serial_query(self.getter.POWER, responsecode=21)
+
+        if power[4] == 64:
+            self.power = False
+        elif power[4] == 65:
+            self.power = True
+        return self.power
+
+    def set_frequency_fm(self, frequency):
         """
+        Sets the frequency
+        :param frequency:
+        :return: the set frequency
+        """
+
         for c in str(round(frequency * 100)):
             if c == "0":
                 self.serial_send(self.setter.DIGIT_0)
@@ -170,11 +222,77 @@ class NadTuner:
         return self.frequency
 
     def set_power_on(self):
+        """
+        Power on tuner
+        """
+
         self.serial_send(self.setter.POWER_ON)
         self.power = True
         return self.power
 
     def set_power_off(self):
+        """
+        Power off tuner
+        """
+
         self.serial_send(self.setter.POWER_OFF)
         self.power = False
         return self.power
+
+    def set_tune_up(self):
+        """
+        Tunes up 0,5 Mhz
+        """
+
+        self.serial_send(self.setter.TUNE_UP)
+
+    def set_tune_down(self):
+        """
+        Tunes down 0,5 Mhz
+        """
+
+        self.serial_send(self.setter.TUNE_DOWN)
+
+    def set_sleep(self):
+        """
+        Sets the sleep timer, 30,60,90 off depending on the amount of invocations
+        """
+
+        self.serial_send(self.setter.SLEEP)
+
+    def set_display_off(self):
+        """
+        Turns off the LCD Display
+        """
+
+        self.serial_send(self.setter.BRIGHTNESS_OFF)
+
+    def set_display_on(self):
+        """
+        Turns on the LCD Display
+        """
+
+        self.serial_send(self.setter.BRIGHTNESS_FULL)
+
+    def set_display_dimmed(self):
+        """
+        Dims on the LCD Display
+        """
+
+        self.serial_send(self.setter.BRIGHTNESS_MED)
+
+    def set_band(self, band='FM'):
+        """
+        :params: band to select
+        :returns: band
+        """
+
+        if band == "FM":
+            self.serial_send(self.setter.FM)
+        elif band == 'AM':
+            self.serial_send(self.setter.AM)
+        self.band = band
+        return band
+
+
+DELAY = 0.2
