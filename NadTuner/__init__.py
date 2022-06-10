@@ -1,5 +1,5 @@
-import serial
 from time import sleep
+import serial
 
 
 class NadGetters:
@@ -67,15 +67,16 @@ class NadTuner:
         __init__
         :param port: serial port to use if the default=/dev/ttyUSB0 is not correct
         """
-        self.band = None
-        self.id = None
-        self.power = None
-        self.frequency = None
-        self.blend = None
-        self.fmmute = None
+        self.__delay__ = 1 / 5
         self.__port__ = port
         self.__serial__ = serial.Serial(port, 9600,
                                         exclusive=False, )  # open serial port
+        self.band = None
+        self.blend = None
+        self.fmmute = None
+        self.frequency = None
+        self.id = None
+        self.power = None
         self.setter = NadSetters()
         self.getter = NadGetters()
 
@@ -107,7 +108,7 @@ class NadTuner:
         :return: None
         """
         self.__serial__.write(message)
-        sleep(DELAY)
+        sleep(self.__delay__)
 
     def serial_query(self, message, responsecode):
         """
@@ -163,7 +164,6 @@ class NadTuner:
             while attempts < 20:
                 response = self.serial_query(
                     self.getter.FM_FREQUENCY, responsecode=45)
-
                 if response is False:
                     continue
                 if response[5] == 2:
@@ -172,7 +172,7 @@ class NadTuner:
                 else:
                     freq_bytes = bytes([response[4], response[5]])
                     self.frequency = int.from_bytes(freq_bytes, "little") / 100
-                # break
+                break
                 attempts += 1
 
         return self.frequency
@@ -196,7 +196,8 @@ class NadTuner:
         :param frequency:
         :return: the set frequency
         """
-
+        if frequency < 100:
+            self.serial_send(self.setter.DIGIT_0)
         for c in str(round(frequency * 100)):
             if c == "0":
                 self.serial_send(self.setter.DIGIT_0)
@@ -218,7 +219,10 @@ class NadTuner:
                 self.serial_send(self.setter.DIGIT_8)
             if c == "9":
                 self.serial_send(self.setter.DIGIT_9)
-            self.frequency = frequency
+            sleep(1/10)
+
+        self.frequency = frequency
+        sleep(3)
         return self.frequency
 
     def set_power_on(self):
@@ -294,5 +298,20 @@ class NadTuner:
         self.band = band
         return band
 
+    def set_blend_on(self):
+        """
+        Enable FM Blend
+        """
 
-DELAY = 0.2
+        self.serial_send(self.setter.BLEND_ON)
+        self.blend = True
+        return self.blend
+
+    def set_blend_off(self):
+        """
+        Enable FM Blend
+        """
+
+        self.serial_send(self.setter.BLEND_OFF)
+        self.blend = False
+        return self.blend
