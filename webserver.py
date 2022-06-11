@@ -50,6 +50,10 @@ class WebTuner:
                 self.myqueue.put(ps)
 
     @http.expose
+    def test(self):
+        return open('test.html')
+
+    @http.expose
     def rds(self):
         if self.myqueue.qsize():
             for a in range(self.myqueue.qsize()):
@@ -105,6 +109,14 @@ class WebTuner:
                 }
             </style>
             """
+        script = """
+        <script>
+        var myVar = setInterval(myTimer, 1000);
+        function myTimer() {
+            $("#rds").load("/rds");
+        }
+        </script>
+        """
 
         return """
         <!DOCTYPE html>
@@ -115,7 +127,9 @@ class WebTuner:
                 integrity="sha384-nn4HPE8lTHyVtfCBi5yW9d20FjT8BJwUXyWZT9InLYax14RDjBj46LmSztkmNP9w"
                 crossorigin="anonymous">
             <meta name="viewport" content="width=device-width, initial-scale=1">
+            <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
             <title>Nad Tuner Interface</title>
+            {}
             {}
         </head>
         <body>
@@ -129,10 +143,12 @@ class WebTuner:
                     <form class="pure-form pure-form-aligned" method="get" action="/tuner">
                         <fieldset>
                             <div class="pure-control-group">
-                                <label for="aligned-power">Power:</label>{}
+                                <label for="aligned-power">Power:</label>
+                                <label for="aligned-power">{}</label>
                             </div>
                             <div class="pure-control-group">
-                                <label for="aligned-power">RDS PS:</label>{}
+                                <label for="aligned-rds">RDS PS:</label>
+                                <label id="rds" for="aligned-rds"></label>                     
                             </div>
                             <div class="pure-control-group">
                                 <label for="aligned-name">Frequency</label>
@@ -159,7 +175,7 @@ class WebTuner:
         </body>
 
         </html>
-        """.format(style, self.Tuner.id, self.power, self.rdsps, self.Tuner.frequency, self.mute, self.blend,
+        """.format(script, style, self.Tuner.id, self.power, self.Tuner.frequency, self.mute, self.blend,
                    powerstyle)
 
     @http.expose
