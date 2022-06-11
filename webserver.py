@@ -1,3 +1,6 @@
+import _thread
+import queue
+
 import cherrypy as http
 
 from NadTuner import NadTuner
@@ -6,12 +9,14 @@ from NadTuner import NadTuner
 class WebTuner:
 
     def __init__(self):
-        self.Tuner = NadTuner()
+        self.Tuner = myTuner
         self.Tuner.get_device_id()
         self.Tuner.get_power()
         self.Tuner.get_blend()
         self.Tuner.get_mute()
         self.Tuner.get_frequency_fm()
+
+        self.rdsps = 'No RDS PS'
 
         if self.Tuner.blend:
             self.blend = 'checked'
@@ -27,8 +32,38 @@ class WebTuner:
         else:
             self.power = 'Off'
 
+        self.myqueue = myQueue
+        _thread.start_new_thread(self.sample_rds, ())
+
+    def sample_rds(self):
+        http.log('RDS Sampling thread Started')
+        while 1:
+            # print('*')
+            response = self.Tuner.__read_bytes__()
+
+            if response[1] == 27:
+                if response[2] == 2:
+                    ps = 'Rds Cleared'
+                else:
+                    ps = response[2:10].decode('utf-8', errors='ignore')
+                http.log('RDS Sampling thread Update pushed: {}'.format(ps))
+                self.myqueue.put(ps)
+
+    @http.expose
+    def rds(self):
+        if self.myqueue.qsize():
+            for a in range(self.myqueue.qsize()):
+                self.rdsps = self.myqueue.get_nowait()
+        return self.rdsps
+
     @http.expose
     def index(self):
+
+        if self.myqueue.qsize():
+            for a in range(self.myqueue.qsize()):
+                self.rdsps = self.myqueue.get_nowait()
+
+            http.log('RDS PS is: {}'.format(self.rdsps))
 
         if self.power == "On":
             powerstyle = "button-error pure-button"
@@ -97,6 +132,9 @@ class WebTuner:
                                 <label for="aligned-power">Power:</label>{}
                             </div>
                             <div class="pure-control-group">
+                                <label for="aligned-power">RDS PS:</label>{}
+                            </div>
+                            <div class="pure-control-group">
                                 <label for="aligned-name">Frequency</label>
                                 <input type="text" id="aligned-name" name="frequency" size="4" value="{:.2f}" />
                             </div>
@@ -121,10 +159,11 @@ class WebTuner:
         </body>
 
         </html>
-        """.format(style, self.Tuner.id, self.power, self.Tuner.frequency, self.mute, self.blend, powerstyle)
+        """.format(style, self.Tuner.id, self.power, self.rdsps, self.Tuner.frequency, self.mute, self.blend,
+                   powerstyle)
 
     @http.expose
-    def tuner(self, frequency, blend='0', mute='0', power='', submit=''):
+    def tuner(self, frequency, blend='0', mute='0', submit=''):
 
         if submit == "power":
             if self.power == 'On':
@@ -162,6 +201,12 @@ class WebTuner:
         if self.Tuner.frequency != float(frequency):
             self.Tuner.set_frequency_fm(frequency=float(frequency))
             http.log('Freq change to: {}'.format(float(frequency)))
+            self.rdsps = 'No RDS PS'
+            # Clear RDS PS queue
+            if self.myqueue.qsize():
+                for a in range(self.myqueue.qsize()):
+                    self.myqueue.get_nowait()
+
         else:
             http.log('Freq no change staying at: {}'.format(float(frequency)))
 
@@ -169,6 +214,9 @@ class WebTuner:
 
 
 if __name__ == "__main__":
+    myQueue = queue.Queue()
+    myTuner = NadTuner()
+
     http.config.update({'server.socket_host': "0.0.0.0",
                         'server.socket_port': 8181})
     http.quickstart(WebTuner())

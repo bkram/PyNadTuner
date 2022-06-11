@@ -71,7 +71,7 @@ class NadTuner:
         self.__delay__ = 1 / 5
         self.__port__ = port
         self.__serial__ = serial.Serial(port, 9600,
-                                        exclusive=False, )  # open serial port
+                                        exclusive=False,timeout=1 )  # open serial port
         self.band = None
         self.blend = None
         self.mute = None
