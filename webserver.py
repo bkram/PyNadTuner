@@ -8,6 +8,9 @@ from NadTuner import NadTuner
 class Storage:
 
     def __init__(self):
+        self.power = None
+        self.mute = None
+        self.blend = None
         self.rdsps = 'No RDS PS'
         self.frequency = 0
 
@@ -17,13 +20,14 @@ class WebTuner:
     def __init__(self):
         self.Tuner = NadTuner()
         self.Storage = Storage()
-
         self.Tuner.get_device_id()
         self.Tuner.get_power()
+        self.Storage.power = self.Tuner.power
         self.Tuner.get_blend()
+        self.Storage.blend = self.Tuner.blend
         self.Tuner.get_mute()
-        self.Tuner.get_frequency_fm()
-        self.Storage.frequency = self.Tuner.frequency
+        self.Storage.mute = self.Tuner.mute
+        self.Storage.frequency = self.Tuner.get_frequency_fm()
 
         if self.Tuner.blend:
             self.blend = 'checked'
@@ -34,6 +38,7 @@ class WebTuner:
             self.mute = 'checked'
         else:
             self.mute = ''
+
         if self.Tuner.power:
             self.power = 'On'
         else:
@@ -45,6 +50,14 @@ class WebTuner:
         http.log('Serial Poller: Started')
         while 1:
             response = self.Tuner.__read_bytes__()
+
+            if response[2] == 21:
+                if response[4] == 64:
+                    self.Storage.power = False
+                elif response[4] == 65:
+                    self.Storage.power = True
+                http.log('Serial Poller: Power Update: {}'.format(
+                    self.Storage.power))
 
             if response[1] == 27:
                 if response[2] == 2:
@@ -66,6 +79,22 @@ class WebTuner:
                 self.Storage.frequency = frequency
                 http.log('Serial Poller: Frequency Update: {}'.format(frequency))
 
+            if response[2] == 47:
+                if response[4] == 64:
+                    self.Storage.mute = False
+                elif response[4] == 65:
+                    self.Storage.mute = True
+                http.log('Serial Poller: Mute Update: {}'.format(
+                    self.Storage.mute))
+
+            if response[2] == 49:
+                if response[4] == 64:
+                    self.Storage.blend = False
+                elif response[4] == 65:
+                    self.Storage.blend = True
+                http.log('Serial Poller: Blend Update: {}'.format(
+                    self.Storage.blend))
+
     # @http.expose
     # def test(self):
     #     return open('test.html')
@@ -73,7 +102,26 @@ class WebTuner:
     @http.expose
     @http.tools.json_out()
     def status(self):
-        return {'frequency': self.Storage.frequency, 'rdsps': self.Storage.rdsps}
+
+        if self.Storage.blend:
+            blend = 'Enabled'
+        else:
+            blend = 'Disabled'
+
+        if self.Storage.mute:
+            mute = 'Enabled'
+        else:
+            mute = 'Disabled'
+
+        if self.Storage.power:
+            power = 'On'
+        else:
+            power = 'Off'
+
+        return {'frequency': self.Storage.frequency,
+                'rdsps': self.Storage.rdsps,
+                'blend': blend, 'mute': mute,
+                'power': power}
 
     @http.expose
     def rds(self):
@@ -81,7 +129,6 @@ class WebTuner:
 
     @http.expose
     def index(self):
-
         if self.power == "On":
             powerstyle = "button-error pure-button"
         else:
@@ -89,6 +136,7 @@ class WebTuner:
 
         style = """
 <style>
+    aside,
     .button-success,
     .button-error,
     .button-neutral {
@@ -99,17 +147,14 @@ class WebTuner:
 
     .button-success {
         background: rgb(28, 184, 65);
-        /* this is a green */
     }
 
     .button-error {
         background: rgb(202, 60, 60);
-        /* this is a maroon */
     }
 
     .button-neutral {
         background: rgb(59, 70, 228);
-        /* this is a maroon */
     }
 
     .pure-u-1,
@@ -119,6 +164,10 @@ class WebTuner:
 
     .pure-u-1 {
         padding: 1em;
+    }
+    aside {
+      background: #000;
+      padding: .1em 1em;
     }
 </style>
 """
@@ -130,22 +179,21 @@ function myTimer() {
     $.getJSON("/status", function(data) {
         var items = [];
         $.each(data, function(key, val) {
-            console.log(key + " " + val)
+            // console.log(key + " " + val)
             $('#' + key).html(val)
         });
     });
 }
 </script>
-        """
+"""
 
         return """
 <!DOCTYPE html>
 <html lang="EN">
 
 <head>
-    <link rel="stylesheet" href="https://unpkg.com/purecss@1.0.0/build/pure-min.css"
-        integrity="sha384-nn4HPE8lTHyVtfCBi5yW9d20FjT8BJwUXyWZT9InLYax14RDjBj46LmSztkmNP9w"
-        crossorigin="anonymous">
+    <link rel="stylesheet" href="https://unpkg.com/purecss@2.1.0/build/pure-min.css"
+     integrity="sha384-yHIFVG6ClnONEA5yB5DJXfW2/KC173DIQrYoZMEtBvGzmf0PKiGyNEqe9N6BNDBH" crossorigin="anonymous">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
     <title>Nad Tuner Interface</title>
@@ -157,15 +205,19 @@ function myTimer() {
     <div class="pure-u-1-3">
     </div>
     <div class="pure-u-1-3">
-        <div style="background-color:teal">
-            <h1> Tuner {}</h1>
-        </div>
-        <!--        <div id="rdsps"></div>-->
+        <br>
+        <aside>
+        <p>
+            <h1>NAD {} Tuner</h1>
+        </p>
+        </aside>
+        <br>
         <form class="pure-form pure-form-aligned" method="get" action="/tuner">
             <fieldset>
+               <legend>Realtime Settings</legend>
                <div class="pure-control-group">
                     <label for="aligned-name">Power:</label>
-                    <span>{}</span>
+                    <span id="power"></span>
                 </div>
                 <div class="pure-control-group">
                     <label for="aligned-name">RDS PS
@@ -179,6 +231,15 @@ function myTimer() {
                 </div>
                 <div class="pure-control-group">
                     <label for="aligned-name">Stereo / Mute</label>
+                    <span id="mute"></span>
+                </div>                
+                <div class="pure-control-group">
+                    <label for="aligned-name">Stereo Blend</label>
+                    <span id="blend"></span>
+                </div>
+                <legend>Change Settings</legend>
+                <div class="pure-control-group">
+                    <label for="aligned-name">Stereo / Mute</label>
                     <input type="checkbox" id="aligned-cb-mute" name="mute" {}/>
                 </div>
                 <div class="pure-control-group">
@@ -187,7 +248,7 @@ function myTimer() {
                 </div>
                  <div class="pure-control-group">
                     <label for="aligned-name">Set Frequency</label>
-                    <input type="text" id="aligned-name" name="frequency" size="4" value="{}"/>
+                    <input type="text" id="aligned-name" class="pure-input-rounded" name="frequency" size="4" placeholder="97.2"/>
                 </div>
                 <div class="pure-controls">
                     <button type="submit" name="submit" value="submit"
@@ -199,15 +260,17 @@ function myTimer() {
                 </div>
             </fieldset>
         </form>
+    <div class="pure-u-1-3">
+    </div>
     </div>
 </div>
 </body>
 </html>
-""".format(script, style, self.Tuner.id,  self.power, self.mute, self.blend, self.Tuner.frequency,
+""".format(script, style, self.Tuner.id, self.mute, self.blend,
            powerstyle)
 
     @http.expose
-    def tuner(self, frequency, blend='0', mute='0', submit=''):
+    def tuner(self, frequency='', blend='0', mute='0', submit=''):
 
         if submit == "power":
             if self.power == 'On':
@@ -242,13 +305,14 @@ function myTimer() {
                 self.Tuner.set_blend_off()
                 self.blend = ''
 
-        if self.Tuner.frequency != float(frequency):
-            self.Tuner.set_frequency_fm(frequency=float(frequency))
-            http.log('Freq change to: {}'.format(float(frequency)))
-            self.Storage.rdsps = 'No RDS PS'
-
-        else:
-            http.log('Freq no change staying at: {}'.format(float(frequency)))
+        if frequency:
+            if self.Tuner.frequency != float(frequency):
+                self.Tuner.set_frequency_fm(frequency=float(frequency))
+                http.log('Freq change to: {}'.format(float(frequency)))
+                self.Storage.rdsps = 'No RDS PS'
+            else:
+                http.log('Freq no change staying at: {}'.format(
+                    float(frequency)))
 
         raise http.HTTPRedirect("/")
 
