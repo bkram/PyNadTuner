@@ -71,7 +71,7 @@ class NadTuner:
         self.__delay__ = 1 / 5
         self.__port__ = port
         self.__serial__ = serial.Serial(port, 9600,
-                                        exclusive=False,timeout=1 )  # open serial port
+                                        exclusive=False, timeout=1)  # open serial port
         self.band = None
         self.blend = None
         self.mute = None
@@ -169,10 +169,11 @@ class NadTuner:
                     continue
                 if response[5] == 2:
                     freq_bytes = bytes([response[3], response[4]])
-                    self.frequency = int.from_bytes(freq_bytes, "little") / 100
+                elif response[5] == 39:
+                    freq_bytes = bytes([response[4] - 64, response[5]])
                 else:
                     freq_bytes = bytes([response[4], response[5]])
-                    self.frequency = int.from_bytes(freq_bytes, "little") / 100
+                self.frequency = int.from_bytes(freq_bytes, "little") / 100
                 break
                 attempts += 1
 
