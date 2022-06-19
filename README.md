@@ -1,6 +1,10 @@
 # WebTuner
 
-A web application to control the NAD Tuners models C 425 or C 426 via the tuner's serial port.
+## Screenshot
+
+![Screenshot.png](pics/Screenshot.png)
+
+A Web application to control the NAD Tuners models C 425 or C 426 via the tuner's serial port.
 
 ## Supported tuners
 
@@ -29,7 +33,7 @@ The tuner does not expose this.
 
 ### Why does it not show the station's RDS text ?
 
-It seems that this maybe is kind of broken, the information is send over the serial bus, but parsing it according to the specifications only works for a certain lenght.
+It seems that this maybe is kind of broken, the information is send over the serial bus, but parsing it according to the specifications only works upto a certain  ength.
 
 Maybe this can be fixed on the python side.
 
