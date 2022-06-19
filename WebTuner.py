@@ -2,7 +2,7 @@ import _thread
 
 import cherrypy as http
 
-from NadTuner import NadTuner
+from NadSerial import Device
 
 
 class Storage:
@@ -18,33 +18,14 @@ class Storage:
 class WebTuner:
 
     def __init__(self):
-        self.Tuner = NadTuner()
+        self.Tuner = Device()
         self.Storage = Storage()
         self.Tuner.get_device_id()
-        self.Tuner.get_power()
-        self.Storage.power = self.Tuner.power
-        self.Tuner.get_blend()
-        self.Storage.blend = self.Tuner.blend
-        self.Tuner.get_mute()
-        self.Storage.mute = self.Tuner.mute
-        self.Storage.frequency = self.Tuner.get_frequency_fm()
-
-        if self.Tuner.blend:
-            self.blend = 'checked'
-        else:
-            self.blend = ''
-
-        if self.Tuner.mute:
-            self.mute = 'checked'
-        else:
-            self.mute = ''
-
-        if self.Tuner.power:
-            self.power = 'On'
-        else:
-            self.power = 'Off'
-
         _thread.start_new_thread(self.serial_poller, ())
+        self.Tuner.serial_send(self.Tuner.getter.POWER)
+        self.Tuner.serial_send(self.Tuner.getter.BLEND)
+        self.Tuner.serial_send(self.Tuner.getter.FM_MUTE)
+        self.Tuner.serial_send(self.Tuner.getter.FM_FREQUENCY)
 
     def serial_poller(self):
         http.log('Serial Poller: Started')
@@ -68,7 +49,6 @@ class WebTuner:
                 self.Storage.rdsps = ps
 
             if response[2] == 45:
-                print(response)
                 if response[5] == 2:
                     freq_bytes = bytes([response[3], response[4]])
                 elif response[5] == 39:
@@ -129,7 +109,18 @@ class WebTuner:
 
     @http.expose
     def index(self):
-        if self.power == "On":
+
+        if self.Storage.blend:
+            blend = 'checked'
+        else:
+            blend = ''
+
+        if self.Storage.mute:
+            mute = 'checked'
+        else:
+            mute = ''
+
+        if self.Storage.power == "On":
             powerstyle = "button-error pure-button"
         else:
             powerstyle = "button-neutral pure-button"
@@ -187,16 +178,18 @@ function myTimer() {
 </script>
 """
 
-        return """
-<!DOCTYPE html>
+        return """<!DOCTYPE html>
 <html lang="EN">
 
 <head>
     <link rel="stylesheet" href="https://unpkg.com/purecss@2.1.0/build/pure-min.css"
-     integrity="sha384-yHIFVG6ClnONEA5yB5DJXfW2/KC173DIQrYoZMEtBvGzmf0PKiGyNEqe9N6BNDBH" crossorigin="anonymous">
+     integrity="sha384-yHIFVG6ClnONEA5yB5DJXfW2/KC173DIQrYoZMEtBvGzmf0PKiGyNEqe9N6BNDBH"
+     crossorigin="anonymous">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
-    <title>Nad Tuner Interface</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"
+     integrity="sha384-vtXRMe3mGCbOeY7l30aIg8H9p3GdeSe4IFlP6G8JMa7o7lXvnz3GFKzPxzJdPfGK"
+     crossorigin="anonymous"></script>
+    <title>Nad WebTuner</title>
     {}
     {}
 </head>
@@ -220,35 +213,36 @@ function myTimer() {
                     <span id="power"></span>
                 </div>
                 <div class="pure-control-group">
-                    <label for="aligned-name">RDS PS
+                    <label for="aligned-name">RDS PS:
                     </label>
                     <span id="rdsps"></span>
                 </div>
                 <div class="pure-control-group">
-                    <label for="aligned-name">Frequency
+                    <label for="aligned-name">Frequency:
                     </label>
                     <span id="frequency"></span>
                 </div>
                 <div class="pure-control-group">
-                    <label for="aligned-name">Stereo / Mute</label>
+                    <label for="aligned-name">Stereo / Mute:</label>
                     <span id="mute"></span>
                 </div>                
                 <div class="pure-control-group">
-                    <label for="aligned-name">Stereo Blend</label>
+                    <label for="aligned-name">Stereo Blend:</label>
                     <span id="blend"></span>
                 </div>
                 <legend>Change Settings</legend>
                 <div class="pure-control-group">
-                    <label for="aligned-name">Stereo / Mute</label>
+                    <label for="aligned-name">Stereo / Mute:</label>
                     <input type="checkbox" id="aligned-cb-mute" name="mute" {}/>
                 </div>
                 <div class="pure-control-group">
-                    <label for="aligned-name">Stereo Blend</label>
+                    <label for="aligned-name">Stereo Blend:</label>
                     <input type="checkbox" id="aligned-cb-blend" name="blend" {} />
                 </div>
                  <div class="pure-control-group">
-                    <label for="aligned-name">Set Frequency</label>
-                    <input type="text" id="aligned-name" class="pure-input-rounded" name="frequency" size="4" placeholder="97.2"/>
+                    <label for="aligned-name">Set Frequency:</label>
+                    <input type="text" id="aligned-name" class="pure-input-rounded"
+                    name="frequency" size="2" placeholder="97.2"/>
                 </div>
                 <div class="pure-controls">
                     <button type="submit" name="submit" value="submit"
@@ -266,53 +260,44 @@ function myTimer() {
 </div>
 </body>
 </html>
-""".format(script, style, self.Tuner.id, self.mute, self.blend,
+""".format(script, style, self.Tuner.id, mute, blend,
            powerstyle)
 
     @http.expose
     def tuner(self, frequency='', blend='0', mute='0', submit=''):
 
         if submit == "power":
-            if self.power == 'On':
+            if self.Storage.power:
                 http.log('Power Off')
-                self.power = 'Off'
                 self.Tuner.set_power_off()
             else:
                 http.log('Power On')
-                self.power = 'On'
                 self.Tuner.set_power_on()
+
         if mute == 'on':
-            http.log('Mute is on')
-            if not self.mute:
+            http.log('Mute on selected')
+            if not self.Storage.mute:
                 http.log('Enable mute')
-                self.mute = 'checked'
                 self.Tuner.set_mute_on()
         else:
             http.log('Mute is off')
-            self.mute = ''
             self.Tuner.set_mute_off()
 
         if blend == 'on':
-            http.log('Blend is on')
-            if not self.blend:
+            http.log('Blend on selected')
+            if not self.Storage.blend:
                 http.log('Enable blend')
                 self.Tuner.set_blend_on()
-                self.blend = 'checked'
         else:
             http.log('Blend is off')
-            if self.blend:
+            if self.Storage.blend:
                 http.log('Disable blend')
                 self.Tuner.set_blend_off()
-                self.blend = ''
 
         if frequency:
             if self.Tuner.frequency != float(frequency):
                 self.Tuner.set_frequency_fm(frequency=float(frequency))
                 http.log('Freq change to: {}'.format(float(frequency)))
-                self.Storage.rdsps = 'No RDS PS'
-            else:
-                http.log('Freq no change staying at: {}'.format(
-                    float(frequency)))
 
         raise http.HTTPRedirect("/")
 

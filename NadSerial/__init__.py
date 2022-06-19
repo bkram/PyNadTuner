@@ -57,7 +57,7 @@ class NadSetters:
         self.TUNE_UP = bytes([0x01, 0x16, 0xD4, 0x02, 0x15])
 
 
-class NadTuner:
+class Device:
     """
     A class to communicate with NAD C-425 and C-426 tuners.
     """
@@ -150,7 +150,7 @@ class NadTuner:
         """
 
         self.id = self.serial_query(self.getter.DEVICE_ID, responsecode=20)[
-            3:7].decode('utf-8')
+                  3:7].decode('utf-8')
         return self.id
 
     def get_frequency_fm(self, force=False):
