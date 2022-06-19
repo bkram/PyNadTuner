@@ -57,7 +57,7 @@ class NadSetters:
         self.TUNE_UP = bytes([0x01, 0x16, 0xD4, 0x02, 0x15])
 
 
-class NadTuner:
+class Device:
     """
     A class to communicate with NAD C-425 and C-426 tuners.
     """
@@ -71,7 +71,7 @@ class NadTuner:
         self.__delay__ = 1 / 5
         self.__port__ = port
         self.__serial__ = serial.Serial(port, 9600,
-                                        exclusive=False, )  # open serial port
+                                        exclusive=False, timeout=1)  # open serial port
         self.band = None
         self.blend = None
         self.mute = None
@@ -150,7 +150,7 @@ class NadTuner:
         """
 
         self.id = self.serial_query(self.getter.DEVICE_ID, responsecode=20)[
-            3:7].decode('utf-8')
+                  3:7].decode('utf-8')
         return self.id
 
     def get_frequency_fm(self, force=False):
@@ -169,10 +169,11 @@ class NadTuner:
                     continue
                 if response[5] == 2:
                     freq_bytes = bytes([response[3], response[4]])
-                    self.frequency = int.from_bytes(freq_bytes, "little") / 100
+                elif response[5] == 39:
+                    freq_bytes = bytes([response[4] - 64, response[5]])
                 else:
                     freq_bytes = bytes([response[4], response[5]])
-                    self.frequency = int.from_bytes(freq_bytes, "little") / 100
+                self.frequency = int.from_bytes(freq_bytes, "little") / 100
                 break
                 attempts += 1
 
