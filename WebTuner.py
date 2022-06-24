@@ -11,8 +11,9 @@ class Storage:
         self.power = None
         self.mute = None
         self.blend = None
-        self.rdsps = 'No RDS PS'
+        self.rdsps = ''
         self.frequency = 0
+        self.rdsrt = {}
 
 
 class WebTuner:
@@ -26,6 +27,12 @@ class WebTuner:
         self.Tuner.serial_send(self.Tuner.getter.BLEND)
         self.Tuner.serial_send(self.Tuner.getter.FM_MUTE)
         self.Tuner.serial_send(self.Tuner.getter.FM_FREQUENCY)
+
+    def __rds_text__(self):
+        result = ''
+        for i in sorted(self.Storage.rdsrt):
+            result += self.Storage.rdsrt[i].decode('utf-8').replace('^M', '')
+        return result
 
     def serial_poller(self):
         http.log('Serial Poller: Started')
@@ -47,6 +54,21 @@ class WebTuner:
                     ps = response[2:10].decode('utf-8', errors='ignore')
                 http.log('Serial Poller: RDS PS Update: {}'.format(ps))
                 self.Storage.rdsps = ps
+
+            if response[1] == 28:
+                if len(response) == 4:
+                    self.Storage.rdsrt = {}
+                    http.log('Serial Poller: RDS Text Update Reset')
+                else:
+                    if response[2] == 94:
+                        pos = response[3] - 64
+                        content = response[4:][:-2]
+                    else:
+                        pos = response[2]
+                        content = response[3:][:-2]
+
+                    http.log('Serial Poller: RDS Text Update Position {} Value {}'.format(pos, content))
+                    self.Storage.rdsrt[pos] = content
 
             if response[2] == 45:
                 if response[5] == 2:
@@ -100,6 +122,7 @@ class WebTuner:
 
         return {'frequency': self.Storage.frequency,
                 'rdsps': self.Storage.rdsps,
+                'rdsrt': self.__rds_text__(),
                 'blend': blend, 'mute': mute,
                 'power': power}
 
@@ -216,6 +239,11 @@ function myTimer() {
                     <label for="aligned-name">RDS PS:
                     </label>
                     <span id="rdsps"></span>
+                </div>
+                <div class="pure-control-group">
+                    <label for="aligned-name">RDS RT:
+                    </label>
+                    <span id="rdsrt"></span>
                 </div>
                 <div class="pure-control-group">
                     <label for="aligned-name">Frequency:
