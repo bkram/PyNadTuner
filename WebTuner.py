@@ -31,7 +31,7 @@ class WebTuner:
     def __rds_text__(self):
         result = ''
         for i in sorted(self.Storage.rdsrt):
-            result += self.Storage.rdsrt[i].decode('utf-8').replace('^M', '')
+            result += self.Storage.rdsrt[i].decode('ascii', errors='ignore').replace('^M', '')
         return result
 
     def serial_poller(self):
@@ -49,9 +49,10 @@ class WebTuner:
 
             if response[1] == 27:
                 if response[2] == 2:
-                    ps = 'No RDS PS'
+                    ps = ''
+                    self.Storage.rdsrt = {}
                 else:
-                    ps = response[2:10].decode('utf-8', errors='ignore')
+                    ps = response[2:10].decode('ascii', errors='ignore')
                 http.log('Serial Poller: RDS PS Update: {}'.format(ps))
                 self.Storage.rdsps = ps
 
@@ -68,7 +69,17 @@ class WebTuner:
                         content = response[3:][:-2]
 
                     http.log('Serial Poller: RDS Text Update Position {} Value {}'.format(pos, content))
-                    self.Storage.rdsrt[pos] = content
+
+                    # if pos==0:
+                        # self.Storage.rdsrt={}
+                    if '^M' in str(response):
+                        # TODO: What do we need to do when we get a ^M, for now strip it out in the self.__rds_text__()
+                        # self.Storage.rdsrt = {}
+                        # self.Storage.rdsrt[pos+100] = content
+                        self.Storage.rdsrt[pos] = content
+                        pass
+                    else:
+                        self.Storage.rdsrt[pos] = content
 
             if response[2] == 45:
                 if response[5] == 2:
@@ -120,7 +131,7 @@ class WebTuner:
         else:
             power = 'Off'
 
-        return {'frequency': self.Storage.frequency,
+        return {'frequency': '{0:.2f} Mhz'.format(self.Storage.frequency),
                 'rdsps': self.Storage.rdsps,
                 'rdsrt': self.__rds_text__(),
                 'blend': blend, 'mute': mute,
@@ -187,7 +198,7 @@ class WebTuner:
 """
         script = """
 <script>
-var myVar = setInterval(myTimer, 1000);
+var myVar = setInterval(myTimer, 2000);
 
 function myTimer() {
     $.getJSON("/status", function(data) {
@@ -230,7 +241,7 @@ function myTimer() {
         <br>
         <form class="pure-form pure-form-aligned" method="get" action="/tuner">
             <fieldset>
-               <legend>Realtime Settings</legend>
+               <legend>Realtime Information</legend>
                <div class="pure-control-group">
                     <label for="aligned-name">Power:</label>
                     <span id="power"></span>
@@ -258,7 +269,7 @@ function myTimer() {
                     <label for="aligned-name">Stereo Blend:</label>
                     <span id="blend"></span>
                 </div>
-                <legend>Change Settings</legend>
+                <legend>Update Settings</legend>
                 <div class="pure-control-group">
                     <label for="aligned-name">Stereo / Mute:</label>
                     <input type="checkbox" id="aligned-cb-mute" name="mute" {}/>
