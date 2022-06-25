@@ -31,7 +31,8 @@ class WebTuner:
     def __rds_text__(self):
         result = ''
         for i in sorted(self.Storage.rdsrt):
-            result += self.Storage.rdsrt[i].decode('ascii', errors='ignore').replace('^M', '')
+            result += self.Storage.rdsrt[i].decode(
+                'ascii', errors='ignore').replace('^M', '')
         return result
 
     def serial_poller(self):
@@ -68,10 +69,11 @@ class WebTuner:
                         pos = response[2]
                         content = response[3:][:-2]
 
-                    http.log('Serial Poller: RDS Text Update Position {} Value {}'.format(pos, content))
+                    http.log(
+                        'Serial Poller: RDS Text Update Position {} Value {}'.format(pos, content))
 
                     # if pos==0:
-                        # self.Storage.rdsrt={}
+                    # self.Storage.rdsrt={}
                     if '^M' in str(response):
                         # TODO: What do we need to do when we get a ^M, for now strip it out in the self.__rds_text__()
                         # self.Storage.rdsrt = {}
