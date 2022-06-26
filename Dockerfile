@@ -4,16 +4,12 @@ LABEL org.opencontainers.image.description="Nad WebTuner"
 ENV PYTHONUNBUFFERED=1
 
 RUN mkdir /webtuner
-COPY launch.sh /
-COPY requirements.txt /webtuner
-COPY WebTuner.py /webtuner
+COPY launch.sh requirements.txt WebTuner.py /webtuner/
+COPY templates/*.html /webtuner/templates/
 COPY NadSerial/__init__.py /webtuner/NadSerial/
-COPY templates/* /webtuner/templates/
 
-RUN apk add --no-cache python3  py-pip  && \
-    pip install --upgrade pip wheel && \
-    pip install -r /webtuner/requirements.txt && \
-    rm -rf /var/cache/apk/*
+RUN apk add --no-cache python3 py-pip  && \
+    pip install -r /webtuner/requirements.txt
 
 WORKDIR /webtuner
-ENTRYPOINT ["/launch.sh"]
+ENTRYPOINT ["/webtuner/launch.sh"]
