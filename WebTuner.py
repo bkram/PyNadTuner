@@ -1,7 +1,9 @@
 import _thread
 import os
+import time
 
 import cherrypy as http
+import jinja2
 
 from NadSerial import Device
 
@@ -33,6 +35,8 @@ class WebTuner:
         self.Tuner.serial_send(self.Tuner.getter.BLEND)
         self.Tuner.serial_send(self.Tuner.getter.FM_MUTE)
         self.Tuner.serial_send(self.Tuner.getter.FM_FREQUENCY)
+        self.jinja = jinja2.Environment(
+            loader=jinja2.FileSystemLoader('templates'))
 
     def __rds_text__(self):
         result = ''
@@ -77,7 +81,6 @@ class WebTuner:
 
                     http.log(
                         'Serial Poller: RDS Text Update Position {} Value {}'.format(pos, content))
-
                     if '^M' in str(response):
                         # TODO: What do we need to do when we get a ^M, for now strip it out in the self.__rds_text__()
                         self.Storage.rdsrt[pos] = content
@@ -157,184 +160,50 @@ class WebTuner:
         else:
             mute = ''
 
-        if self.Storage.power == "On":
+        if self.Storage.power:
             powerstyle = "button-error pure-button"
         else:
-            powerstyle = "button-neutral pure-button"
+            powerstyle = "button-success pure-button"
 
-        style = """
-<style>
-    aside,
-    .button-success,
-    .button-error,
-    .button-neutral {
-        color: white;
-        border-radius: 4px;
-        text-shadow: 0 1px 1px rgba(0, 0, 0, 0.2);
-    }
-
-    .button-success {
-        background: rgb(28, 184, 65);
-    }
-
-    .button-error {
-        background: rgb(202, 60, 60);
-    }
-
-    .button-neutral {
-        background: rgb(59, 70, 228);
-    }
-
-    .pure-u-1,
-    h1 {
-        text-align: center;
-    }
-
-    .pure-u-1 {
-        padding: 1em;
-    }
-    aside {
-      background: #000;
-      padding: .1em 1em;
-    }
-</style>
-"""
-        script = """
-<script>
-var myVar = setInterval(myTimer, 1000);
-
-function myTimer() {
-    $.getJSON("/status", function(data) {
-        var items = [];
-        $.each(data, function(key, val) {
-            // console.log(key + " " + val)
-            $('#' + key).html(val)
-        });
-    });
-}
-</script>
-"""
-
-        return """<!DOCTYPE html>
-<html lang="EN">
-
-<head>
-    <link rel="stylesheet" href="https://unpkg.com/purecss@2.1.0/build/pure-min.css"
-     integrity="sha384-yHIFVG6ClnONEA5yB5DJXfW2/KC173DIQrYoZMEtBvGzmf0PKiGyNEqe9N6BNDBH"
-     crossorigin="anonymous">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"
-     integrity="sha384-vtXRMe3mGCbOeY7l30aIg8H9p3GdeSe4IFlP6G8JMa7o7lXvnz3GFKzPxzJdPfGK"
-     crossorigin="anonymous"></script>
-    <title>Nad WebTuner</title>
-    {}
-    {}
-</head>
-<body>
-<div class="pure-g">
-    <div class="pure-u-1-3">
-    </div>
-    <div class="pure-u-1-3">
-        <br>
-        <aside>
-        <p>
-            <h1>NAD {} Tuner</h1>
-        </p>
-        </aside>
-        <br>
-        <form class="pure-form pure-form-aligned" method="get" action="/tuner">
-            <fieldset>
-               <legend>Realtime Information</legend>
-               <div class="pure-control-group">
-                    <label for="aligned-name">Power:</label>
-                    <span id="power"></span>
-                </div>
-                <div class="pure-control-group">
-                    <label for="aligned-name">RDS PS:
-                    </label>
-                    <span id="rdsps"></span>
-                </div>
-                <div class="pure-control-group">
-                    <label for="aligned-name">RDS RT:
-                    </label>
-                    <span id="rdsrt"></span>
-                </div>
-                <div class="pure-control-group">
-                    <label for="aligned-name">Frequency:
-                    </label>
-                    <span id="frequency"></span>
-                </div>
-                <div class="pure-control-group">
-                    <label for="aligned-name">Stereo / Mute:</label>
-                    <span id="mute"></span>
-                </div>                
-                <div class="pure-control-group">
-                    <label for="aligned-name">Stereo Blend:</label>
-                    <span id="blend"></span>
-                </div>
-                <legend>Update Settings</legend>
-                <div class="pure-control-group">
-                    <label for="aligned-name">Stereo / Mute:</label>
-                    <input type="checkbox" id="aligned-cb-mute" name="mute" {}/>
-                </div>
-                <div class="pure-control-group">
-                    <label for="aligned-name">Stereo Blend:</label>
-                    <input type="checkbox" id="aligned-cb-blend" name="blend" {} />
-                </div>
-                 <div class="pure-control-group">
-                    <label for="aligned-name">Set Frequency:</label>
-                    <input type="text" id="aligned-name" class="pure-input-rounded"
-                    name="frequency" size="2" placeholder="97.2"/>
-                </div>
-                <div class="pure-controls">
-                    <button type="submit" name="submit" value="submit"
-                            class="button-success pure-button">Submit
-                    </button>
-                    <button type="submit" name="submit" value="power"
-                            class="{}">Power
-                    </button>
-                </div>
-            </fieldset>
-        </form>
-    <div class="pure-u-1-3">
-    </div>
-    </div>
-</div>
-</body>
-</html>
-""".format(script, style, self.Tuner.id, mute, blend,
-           powerstyle)
+        print(self.Storage.power)
+        print(powerstyle)
+        template = self.jinja.get_template('index.html')
+        return template.render(tuner=self.Tuner.id, powerstyle=powerstyle,
+                               blend=blend, mute=mute)
 
     @http.expose
     def tuner(self, frequency='', blend='0', mute='0', submit=''):
 
+        self.Tuner.serial_send(self.Tuner.getter.POWER)
+
+        time.sleep(.5)
         if submit == "power":
             if self.Storage.power:
-                http.log('Power Off')
                 self.Tuner.set_power_off()
+                http.log('Power Off')
             else:
-                http.log('Power On')
                 self.Tuner.set_power_on()
+                http.log('Power On')
 
         if mute == 'on':
             http.log('Mute on selected')
             if not self.Storage.mute:
-                http.log('Enable mute')
                 self.Tuner.set_mute_on()
+                http.log('Enable mute')
         else:
-            http.log('Mute is off')
             self.Tuner.set_mute_off()
+            http.log('Mute is off')
 
         if blend == 'on':
             http.log('Blend on selected')
             if not self.Storage.blend:
-                http.log('Enable blend')
                 self.Tuner.set_blend_on()
+                http.log('Enable blend')
         else:
             http.log('Blend is off')
             if self.Storage.blend:
-                http.log('Disable blend')
                 self.Tuner.set_blend_off()
+                http.log('Disable blend')
 
         if frequency:
             if self.Tuner.frequency != float(frequency):

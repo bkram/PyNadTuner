@@ -71,4 +71,4 @@ Power toggling or changing the frequency will make the tuner send the RDS data o
 ## NadSerial
 
 This python package implements the serial handling required to communicate with NAD devices, this could be extended to include more NAD devices such as recievers and amplifiers which share the same protocol.
-However the more recent devices have switched to another serial protocol, which is not compatible with this package.
+However, more recent devices have switched to another serial protocol, which is not compatible with this package.
