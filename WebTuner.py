@@ -11,7 +11,7 @@ from NadSerial import Device
 class Storage:
 
     def __init__(self):
-        self.power = None
+        self.standby = None
         self.mute = None
         self.blend = None
         self.rdsps = ''
@@ -52,11 +52,11 @@ class WebTuner:
 
             if response[2] == 21:
                 if response[4] == 64:
-                    self.Storage.power = False
+                    self.Storage.standby = False
                 elif response[4] == 65:
-                    self.Storage.power = True
+                    self.Storage.standby = True
                 http.log('Serial Poller: Power Update: {}'.format(
-                    self.Storage.power))
+                    self.Storage.standby))
 
             if response[1] == 27:
                 if response[2] == 2:
@@ -132,7 +132,7 @@ class WebTuner:
         else:
             mute = 'Disabled'
 
-        if self.Storage.power:
+        if self.Storage.standby:
             power = 'On'
         else:
             power = 'Off'
@@ -160,13 +160,11 @@ class WebTuner:
         else:
             mute = ''
 
-        if self.Storage.power:
-            powerstyle = "button-error pure-button"
-        else:
+        if self.Storage.standby:
             powerstyle = "button-success pure-button"
+        else:
+            powerstyle = "button-error pure-button"
 
-        print(self.Storage.power)
-        print(powerstyle)
         template = self.jinja.get_template('index.html')
         return template.render(tuner=self.Tuner.id, powerstyle=powerstyle,
                                blend=blend, mute=mute)
@@ -177,8 +175,8 @@ class WebTuner:
         self.Tuner.serial_send(self.Tuner.getter.POWER)
 
         time.sleep(.5)
-        if submit == "power":
-            if self.Storage.power:
+        if submit == "standby":
+            if self.Storage.standby:
                 self.Tuner.set_power_off()
                 http.log('Power Off')
             else:
