@@ -72,14 +72,9 @@ class WebTuner:
                     http.log(
                         'Serial Poller: RDS Text Update Position {} Value {}'.format(pos, content))
 
-                    # if pos==0:
-                    # self.Storage.rdsrt={}
                     if '^M' in str(response):
                         # TODO: What do we need to do when we get a ^M, for now strip it out in the self.__rds_text__()
-                        # self.Storage.rdsrt = {}
-                        # self.Storage.rdsrt[pos+100] = content
                         self.Storage.rdsrt[pos] = content
-                        pass
                     else:
                         self.Storage.rdsrt[pos] = content
 
@@ -200,7 +195,7 @@ class WebTuner:
 """
         script = """
 <script>
-var myVar = setInterval(myTimer, 2000);
+var myVar = setInterval(myTimer, 1000);
 
 function myTimer() {
     $.getJSON("/status", function(data) {
