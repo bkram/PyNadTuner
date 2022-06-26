@@ -29,8 +29,10 @@ python WebTuner.py
 
 ### Docker based run
 
+To run on the console use
+
 ```sh
-docker run --privileged -p 8181:8181 -v /dev/ttyUSB0:/dev/ttyUSB0 ghcr.io/bkram/pynadtuner:latest
+docker run -p 8181:8181 --device /dev/ttyUSB0:/dev/ttyUSB0 ghcr.io/bkram/pynadtuner:latest
 ```
 
 Point your webbrowser to <http://docker-host:8181> and enjoy.
