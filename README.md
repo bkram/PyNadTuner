@@ -10,29 +10,44 @@ A Web application to control the NAD Tuners models C 425 or C 426 via the tuner'
 
 ## Supported tuners
 
-Successfully tested on a "grey" C 425 and a "silver" C 426.
-
-## Requirements
-
-See the included requirements.txt
+Successfully tested on a "grey/black" C 425 and a "silver/titanium" C 426.
 
 ## WebTuner usage
 
-Connect your tuner to your device, it expects to a connection on /dev/ttyUSB0, this can be overriden by specifying the
-correct port='/dev/ttyUSBX' when calling Device().
+Connect your tuner to your device with a serial to usb cable, if the connection to the tuner is not on /dev/ttyUSB0, or if you have more tuners the environment variable TUNER_PORT can be set to the correct one before starting the webtuner
 
 ### Local installation run
+
+#### Requirements
+
+See the included requirements.txt
+
+#### Startup
 
 ```bash
 python WebTuner.py
 ```
 
+Or
+
+```bash
+./launch.sh
+```
+
 ### Docker based run
 
-To run on the console use
+The images in ghcr.io are for linux/amd64, linux/arm64 and linux/arm/v7
+
+#### To run on the console use
 
 ```sh
 docker run -p 8181:8181 --device /dev/ttyUSB0:/dev/ttyUSB0 ghcr.io/bkram/pynadtuner:latest
+```
+
+#### To run in the background
+
+```sh
+docker run -d --name="WebTuner" -p 8181:8181 --device /dev/ttyUSB0:/dev/ttyUSB0 --restart unless-stopped ghcr.io/bkram/pynadtuner:latest
 ```
 
 Point your webbrowser to <http://docker-host:8181> and enjoy.
@@ -41,7 +56,15 @@ Point your webbrowser to <http://docker-host:8181> and enjoy.
 
 ### Why does it not show the station's strength ?
 
-The tuner does not expose this.
+The tuner does not expose this information
+
+### Sometimes the Power button does not work ?
+
+This has been experienced with the C 425, manually powering it off and on seems te resolve the issue
+
+### RDS RT does not always work
+
+The tuner does not seem to pass *all* the information *all the time* from the RDS decoder over the serial bus even though the tuner's display seems to show the correct text
 
 ## NadSerial
 
