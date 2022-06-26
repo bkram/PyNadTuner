@@ -175,7 +175,6 @@ class Device:
                     freq_bytes = bytes([response[4], response[5]])
                 self.frequency = int.from_bytes(freq_bytes, "little") / 100
                 break
-                attempts += 1
 
         return self.frequency
 
@@ -294,21 +293,21 @@ class Device:
 
     def set_display_off(self):
         """
-        Turns off the LCD Display
+        Turns off the LCD
         """
 
         self.serial_send(self.setter.BRIGHTNESS_OFF)
 
     def set_display_on(self):
         """
-        Turns on the LCD Display
+        Turns on the LCD
         """
 
         self.serial_send(self.setter.BRIGHTNESS_FULL)
 
     def set_display_dimmed(self):
         """
-        Dims on the LCD Display
+        Dims on the LCD
         """
 
         self.serial_send(self.setter.BRIGHTNESS_MED)

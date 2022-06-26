@@ -41,7 +41,7 @@ The images in ghcr.io are for linux/amd64, linux/arm64 and linux/arm/v7
 #### To run on the console use
 
 ```sh
-docker run -p 8181:8181 --device /dev/ttyUSB0:/dev/ttyUSB0 ghcr.io/bkram/pynadtuner:latest
+docker run --rm -p 8181:8181 --device /dev/ttyUSB0:/dev/ttyUSB0 ghcr.io/bkram/pynadtuner:latest
 ```
 
 #### To run in the background
@@ -66,7 +66,9 @@ This has been experienced with the C 425, manually powering it off and on seems 
 
 The tuner does not seem to pass *all* the information *all the time* from the RDS decoder over the serial bus even though the tuner's display seems to show the correct text
 
+Power toggling or changing the frequency will make the tuner send the RDS data once more
+
 ## NadSerial
 
 This python package implements the serial handling required to communicate with NAD devices, this could be extended to include more NAD devices such as recievers and amplifiers which share the same protocol.
-However the more recent devices have switched to another serial protocol, which is not compatible with this package.
+However, more recent devices have switched to another serial protocol, which is not compatible with this package.
