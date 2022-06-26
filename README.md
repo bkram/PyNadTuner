@@ -19,23 +19,25 @@ See the included requirements.txt
 Connect your tuner to your device, it expects to a connection on /dev/ttyUSB0, this can be overriden by specifying the
 correct port='/dev/ttyUSBX' when calling Device().
 
+### Local installation run
+
 ```bash
 python WebTuner.py
 ```
 
-Point your webbrowser to <http://0.0.0.0:8181> and enjoy.
+### Docker based run
+
+```sh
+docker run --privileged -p 8181:8181 -v /dev/ttyUSB0:/dev/ttyUSB0 ghcr.io/bkram/pynadtuner:latest
+```
+
+Point your webbrowser to <http://docker-host:8181> and enjoy.
 
 ## FAQ
 
 ### Why does it not show the station's strength ?
 
 The tuner does not expose this.
-
-### Why does it not show the station's RDS text ?
-
-It seems that this maybe is kind of broken, the information is send over the serial bus, but parsing it according to the specifications only works upto a certain  ength.
-
-Maybe this can be fixed on the python side.
 
 ## NadSerial
 

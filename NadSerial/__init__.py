@@ -150,7 +150,7 @@ class Device:
         """
 
         self.id = self.serial_query(self.getter.DEVICE_ID, responsecode=20)[
-                  3:7].decode('utf-8')
+            3:7].decode('ascii')
         return self.id
 
     def get_frequency_fm(self, force=False):
