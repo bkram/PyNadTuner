@@ -35,7 +35,7 @@ class WebTuner:
         self.Tuner.serial_send(self.Tuner.getter.BLEND)
         self.Tuner.serial_send(self.Tuner.getter.FM_MUTE)
         self.Tuner.serial_send(self.Tuner.getter.FM_FREQUENCY)
-        self.jinja = jinja2.Environment(
+        self.jinja2 = jinja2.Environment(
             loader=jinja2.FileSystemLoader('templates'))
 
     def __rds_text__(self):
@@ -114,10 +114,6 @@ class WebTuner:
                 http.log('Serial Poller: Blend Update: {}'.format(
                     self.Storage.blend))
 
-    # @http.expose
-    # def test(self):
-    #     return open('test.html')
-
     @http.expose
     @http.tools.json_out()
     def status(self):
@@ -144,10 +140,6 @@ class WebTuner:
                 'power': power}
 
     @http.expose
-    def rds(self):
-        return '{:.2f} : {}'.format(self.Storage.frequency, self.Storage.rdsps)
-
-    @http.expose
     def index(self):
 
         if self.Storage.blend:
@@ -165,16 +157,17 @@ class WebTuner:
         else:
             powerstyle = "button-error pure-button"
 
-        template = self.jinja.get_template('index.html')
+        template = self.jinja2.get_template('index.html')
         return template.render(tuner=self.Tuner.id, powerstyle=powerstyle,
                                blend=blend, mute=mute)
 
     @http.expose
     def tuner(self, frequency='', blend='0', mute='0', submit=''):
 
+        # Trigger query actual power status to work around bug in C 425
         self.Tuner.serial_send(self.Tuner.getter.POWER)
-
         time.sleep(.5)
+
         if submit == "standby":
             if self.Storage.standby:
                 self.Tuner.set_power_off()
