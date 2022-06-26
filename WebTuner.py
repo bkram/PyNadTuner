@@ -1,4 +1,5 @@
 import _thread
+import os
 
 import cherrypy as http
 
@@ -19,7 +20,12 @@ class Storage:
 class WebTuner:
 
     def __init__(self):
-        self.Tuner = Device()
+
+        if 'TUNER_PORT' in os.environ:
+            self.Tuner = Device(os.environ['TUNER_PORT'])
+        else:
+            self.Tuner = Device()
+
         self.Storage = Storage()
         self.Tuner.get_device_id()
         _thread.start_new_thread(self.serial_poller, ())
