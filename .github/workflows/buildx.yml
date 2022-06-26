@@ -3,8 +3,9 @@ name: Create and publish a Docker image
 
 on:
   push:
-    # branches: ["release", "latest"]
-
+    # branches: ["main"]
+  schedule:
+    - cron: "0 0 * * *"
   workflow_dispatch:
 
 env:
