@@ -45,4 +45,5 @@ jobs:
       - name: Available platforms
         run: echo ${{ steps.buildx.outputs.platforms }}
 
-
+      - name: Build and push
+        run: docker buildx build --platform linux/amd64,linux/arm64,linux/arm/v7 . -t ghcr.io/bkram/pynadtuner --push
