@@ -1,5 +1,7 @@
 # WebTuner
 
+[![Create and publish a Docker image](https://github.com/bkram/PyNadTuner/actions/workflows/buildx.yml/badge.svg?branch=main)](https://github.com/bkram/PyNadTuner/actions/workflows/buildx.yml)
+
 ## Screenshot
 
 ![Screenshot.png](pics/Screenshot.png)
