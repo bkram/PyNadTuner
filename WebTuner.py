@@ -199,7 +199,7 @@ class WebTuner:
         if frequency:
             if self.Tuner.frequency != float(frequency):
                 self.Tuner.set_frequency_fm(frequency=float(frequency))
-                http.log('Freq change to: {}'.format(float(frequency)))
+                http.log('Frequency change to: {}'.format(float(frequency)))
 
         raise http.HTTPRedirect("/")
 
