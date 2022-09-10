@@ -129,15 +129,10 @@ class WebTuner:
             mute = 'Disabled'
 
         if self.Storage.standby:
-            power = 'On'
-        else:
-            power = 'Off'
-
-        return {'frequency': '{0:.2f} Mhz'.format(self.Storage.frequency),
-                'rdsps': self.Storage.rdsps,
-                'rdsrt': self.__rds_text__(),
-                'blend': blend, 'mute': mute,
-                'power': power}
+            return {'frequency': '{0:.2f} Mhz'.format(self.Storage.frequency),
+                    'rdsps': self.Storage.rdsps,
+                    'rdsrt': self.__rds_text__(),
+                    'blend': blend, 'mute': mute}
 
     @http.expose
     def index(self):
@@ -153,22 +148,24 @@ class WebTuner:
             mute = ''
 
         if self.Storage.standby:
-            powerstyle = "button-success pure-button"
-        else:
             powerstyle = "button-error pure-button"
+            powertext = "Turn Off"
+        else:
+            powerstyle = "button-success pure-button"
+            powertext = "Turn On"
 
         template = self.jinja2.get_template('index.html')
-        return template.render(tuner=self.Tuner.id, powerstyle=powerstyle,
+        return template.render(tuner=self.Tuner.id, powerstyle=powerstyle, powertext=powertext,
                                blend=blend, mute=mute)
 
     @http.expose
-    def tuner(self, frequency='', blend='0', mute='0', submit=''):
+    def tuner(self, frequency='', blend='0', mute='0', form=''):
 
         # Trigger query actual power status to work around bug in C 425
         self.Tuner.serial_send(self.Tuner.getter.POWER)
         time.sleep(.5)
 
-        if submit == "standby":
+        if form == "standby":
             if self.Storage.standby:
                 self.Tuner.set_power_off()
                 http.log('Power Off')
