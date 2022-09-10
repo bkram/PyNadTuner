@@ -24,6 +24,8 @@ See the included requirements.txt
 
 #### Startup
 
+Make sure the user you are running the WebTuner under has permissions to open the serial port, on Ubuntu you can add the user to the 'dialout' group.
+
 ```bash
 python WebTuner.py
 ```
@@ -41,13 +43,13 @@ The images in ghcr.io are for linux/amd64, linux/arm64 and linux/arm/v7
 #### To run on the console use
 
 ```sh
-docker run --rm -p 8181:8181 --device /dev/ttyUSB0:/dev/ttyUSB0 ghcr.io/bkram/pynadtuner:latest
+sudo docker run --rm --name=WebTuner -p 8181:8181 --device /dev/ttyUSB0:/dev/ttyUSB0 ghcr.io/bkram/pynadtuner:latest
 ```
 
 #### To run in the background
 
 ```sh
-docker run -d --name="WebTuner" -p 8181:8181 --device /dev/ttyUSB0:/dev/ttyUSB0 --restart unless-stopped ghcr.io/bkram/pynadtuner:latest
+sudo docker run -d --name=WebTuner -p 8181:8181 --device /dev/ttyUSB0:/dev/ttyUSB0 --restart unless-stopped ghcr.io/bkram/pynadtuner:latest
 ```
 
 Point your webbrowser to <http://docker-host:8181> and enjoy.
@@ -58,15 +60,15 @@ Point your webbrowser to <http://docker-host:8181> and enjoy.
 
 The tuner does not expose this information
 
-### Sometimes the Power button does not work ?
+### Sometimes the Standby button does not work ?
 
 This has been experienced with the C 425, manually powering it off and on seems te resolve the issue
 
 ### RDS RT does not always work
 
-The tuner does not seem to pass *all* the information *all the time* from the RDS decoder over the serial bus even though the tuner's display seems to show the correct text
+The tuner does not seem to pass *all* the information *all the time* from the RDS decoder over the serial bus even though the tuner's display seems to show the correct text.
 
-Power toggling or changing the frequency will make the tuner send the RDS data once more
+Standby toggling or changing the frequency will make the tuner send the RDS data once more.
 
 ## NadSerial
 
