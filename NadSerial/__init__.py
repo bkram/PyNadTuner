@@ -55,6 +55,7 @@ class NadSetters:
         self.TUNER_FM = bytes([1, 21, 43, 94, 65, 2, ])
         self.TUNE_DOWN = bytes([0x01, 0x16, 0xD3, 0x02, 0x16])
         self.TUNE_UP = bytes([0x01, 0x16, 0xD4, 0x02, 0x15])
+        self.ENTER = bytes([1, 22, 197, 2, 36])
 
 
 class Device:
@@ -150,7 +151,7 @@ class Device:
         """
 
         self.id = self.serial_query(self.getter.DEVICE_ID, responsecode=20)[
-            3:7].decode('ascii')
+                  3:7].decode('ascii')
         return self.id
 
     def get_frequency_fm(self, force=False):
@@ -246,10 +247,9 @@ class Device:
                 self.serial_send(self.setter.DIGIT_8)
             if c == "9":
                 self.serial_send(self.setter.DIGIT_9)
-            sleep(1 / 10)
-
+            sleep(1 / 40)
+            # self.serial_send(self.setter.ENTER)
         self.frequency = frequency
-        sleep(3)
         return self.frequency
 
     def set_power_on(self):

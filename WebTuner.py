@@ -39,14 +39,16 @@ class WebTuner:
             loader=jinja2.FileSystemLoader('templates'))
 
     def __rds_text__(self):
-        result = ''
+        result = []
         for i in sorted(self.Storage.rdsrt):
-            result += self.Storage.rdsrt[i].decode(
-                'ascii', errors='ignore').replace('^M', '')
-        return result
+            result += self.Storage.rdsrt[i]
+        return ''.join(result).replace('^M', '').replace('^@', '')
 
     def serial_poller(self):
-        http.log('Serial Poller: Started')
+
+        debug = False
+        if debug:
+            http.log('Serial Poller: Started')
         while 1:
             response = self.Tuner.__read_bytes__()
 
@@ -55,8 +57,9 @@ class WebTuner:
                     self.Storage.standby = False
                 elif response[4] == 65:
                     self.Storage.standby = True
-                http.log('Serial Poller: Power Update: {}'.format(
-                    self.Storage.standby))
+                if debug:
+                    http.log('Serial Poller: Power Update: {}'.format(
+                        self.Storage.standby))
 
             if response[1] == 27:
                 if response[2] == 2:
@@ -64,13 +67,21 @@ class WebTuner:
                     self.Storage.rdsrt = {}
                 else:
                     ps = response[2:10].decode('ascii', errors='ignore')
-                http.log('Serial Poller: RDS PS Update: {}'.format(ps))
+                    if debug:
+                        http.log('Serial Poller: RDS PS Update: {}'.format(ps))
                 self.Storage.rdsps = ps
 
             if response[1] == 28:
                 if len(response) == 4:
-                    self.Storage.rdsrt = {}
-                    http.log('Serial Poller: RDS Text Update Reset')
+                    # self.Storage.rdsrt = {}
+                    self.Storage.rdsrt = {0: '    ', 4: '    ', 8: '    ', 12: '    ', 16: '    ', 20: '    ',
+                                          24: '    ', 28: '    ',
+                                          32: '    ', 36: '    ', 40: '    ', 44: '    ', 48: '    ', 52: '    ',
+                                          56: '    ', 60: '    ',
+                                          64: '    ', 68: '    ', 72: '    ', 76: '    '}
+
+                    if debug:
+                        http.log('Serial Poller: RDS Text Update Reset')
                 else:
                     if response[2] == 94:
                         pos = response[3] - 64
@@ -78,14 +89,16 @@ class WebTuner:
                     else:
                         pos = response[2]
                         content = response[3:][:-2]
-
-                    http.log(
-                        'Serial Poller: RDS Text Update Position {} Value {}'.format(pos, content))
-                    if '^M' in str(response):
-                        # TODO: What do we need to do when we get a ^M, for now strip it out in the self.__rds_text__()
-                        self.Storage.rdsrt[pos] = content
-                    else:
-                        self.Storage.rdsrt[pos] = content
+                    if debug:
+                        http.log(
+                            'Serial Poller: RDS Text Pos {} Test {}'.format(pos, content))
+                    # http.log(
+                    #     'Serial Poller: RDS Text Update Position {} Value {}'.format(pos, content))
+                    #
+                    # if '^M' in str(response):
+                    #     # TODO: What do we need to do when we get a ^M, for now strip it out in the self.__rds_text__()
+                    self.Storage.rdsrt[pos] = content.decode(
+                        'ascii', errors='ignore')
 
             if response[2] == 45:
                 if response[5] == 2:
@@ -96,23 +109,26 @@ class WebTuner:
                     freq_bytes = bytes([response[4], response[5]])
                 frequency = int.from_bytes(freq_bytes, "little") / 100
                 self.Storage.frequency = frequency
-                http.log('Serial Poller: Frequency Update: {}'.format(frequency))
+                if debug:
+                    http.log('Serial Poller: Frequency Update: {}'.format(frequency))
 
             if response[2] == 47:
                 if response[4] == 64:
                     self.Storage.mute = False
                 elif response[4] == 65:
                     self.Storage.mute = True
-                http.log('Serial Poller: Mute Update: {}'.format(
-                    self.Storage.mute))
+                if debug:
+                    http.log('Serial Poller: Mute Update: {}'.format(
+                        self.Storage.mute))
 
             if response[2] == 49:
                 if response[4] == 64:
                     self.Storage.blend = False
                 elif response[4] == 65:
                     self.Storage.blend = True
-                http.log('Serial Poller: Blend Update: {}'.format(
-                    self.Storage.blend))
+                if debug:
+                    http.log('Serial Poller: Blend Update: {}'.format(
+                        self.Storage.blend))
 
     @http.expose
     @http.tools.json_out()
@@ -129,6 +145,8 @@ class WebTuner:
             mute = 'Disabled'
 
         if self.Storage.standby:
+            # http.log('{}'.format(self.Storage.rdsrt))
+
             return {'frequency': '{0:.2f} Mhz'.format(self.Storage.frequency),
                     'rdsps': self.Storage.rdsps,
                     'rdsrt': self.__rds_text__(),
@@ -194,14 +212,31 @@ class WebTuner:
                 http.log('Disable blend')
 
         if frequency:
+            frequency = frequency.replace(',', '.')
             if self.Tuner.frequency != float(frequency):
                 self.Tuner.set_frequency_fm(frequency=float(frequency))
                 http.log('Frequency change to: {}'.format(float(frequency)))
 
         raise http.HTTPRedirect("/")
 
+    @http.expose
+    def tune(self, step=''):
+        newfreq = self.Storage.frequency + float(step)
+        self.Tuner.set_frequency_fm(frequency=newfreq)
+        http.log('Frequency step change to: {}'.format(float(newfreq)))
+
 
 if __name__ == "__main__":
+    conf = {
+        '/': {
+            'tools.sessions.on': True,
+            'tools.staticdir.root': os.path.abspath(os.getcwd())
+        },
+        '/static': {
+            'tools.staticdir.on': True,
+            'tools.staticdir.dir': './public'
+        }
+    }
     http.config.update({'server.socket_host': "0.0.0.0",
                         'server.socket_port': 8181})
-    http.quickstart(WebTuner())
+    http.quickstart(WebTuner(), '/', conf)
