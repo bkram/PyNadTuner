@@ -224,8 +224,9 @@ class Device:
         :param frequency:
         :return: the set frequency
         """
-        if frequency < 100:
-            self.serial_send(self.setter.DIGIT_0)
+        # if frequency < 100:
+        #     # self.serial_send(self.setter.DIGIT_0)
+        #     pass
         for c in str(round(frequency * 100)):
             if c == "0":
                 self.serial_send(self.setter.DIGIT_0)
@@ -247,7 +248,7 @@ class Device:
                 self.serial_send(self.setter.DIGIT_8)
             if c == "9":
                 self.serial_send(self.setter.DIGIT_9)
-            sleep(1 / 40)
+            sleep(1 / 20)
             # self.serial_send(self.setter.ENTER)
         self.frequency = frequency
         return self.frequency

@@ -75,10 +75,9 @@ class WebTuner:
                 if len(response) == 4:
                     # self.Storage.rdsrt = {}
                     self.Storage.rdsrt = {0: '    ', 4: '    ', 8: '    ', 12: '    ', 16: '    ', 20: '    ',
-                                          24: '    ', 28: '    ',
-                                          32: '    ', 36: '    ', 40: '    ', 44: '    ', 48: '    ', 52: '    ',
-                                          56: '    ', 60: '    ',
-                                          64: '    ', 68: '    ', 72: '    ', 76: '    '}
+                                          24: '    ', 28: '    ', 32: '    ', 36: '    ', 40: '    ', 44: '    ',
+                                          48: '    ', 52: '    ', 56: '    ', 60: '    ', 64: '    ', 68: '    ',
+                                          72: '    ', 76: '    '}
 
                     if debug:
                         http.log('Serial Poller: RDS Text Update Reset')
@@ -100,6 +99,7 @@ class WebTuner:
                     self.Storage.rdsrt[pos] = content.decode(
                         'ascii', errors='ignore')
 
+            # TODO: frequency around 97.30-97.45 is still wrong
             if response[2] == 45:
                 if response[5] == 2:
                     freq_bytes = bytes([response[3], response[4]])
@@ -145,8 +145,6 @@ class WebTuner:
             mute = 'Disabled'
 
         if self.Storage.standby:
-            # http.log('{}'.format(self.Storage.rdsrt))
-
             return {'frequency': '{0:.2f} Mhz'.format(self.Storage.frequency),
                     'rdsps': self.Storage.rdsps,
                     'rdsrt': self.__rds_text__(),
@@ -154,16 +152,6 @@ class WebTuner:
 
     @http.expose
     def index(self):
-
-        if self.Storage.blend:
-            blend = 'checked'
-        else:
-            blend = ''
-
-        if self.Storage.mute:
-            mute = 'checked'
-        else:
-            mute = ''
 
         if self.Storage.standby:
             powerstyle = "button-error pure-button"
@@ -173,24 +161,10 @@ class WebTuner:
             powertext = "Turn On"
 
         template = self.jinja2.get_template('index.html')
-        return template.render(tuner=self.Tuner.id, powerstyle=powerstyle, powertext=powertext,
-                               blend=blend, mute=mute)
+        return template.render(tuner=self.Tuner.id, powerstyle=powerstyle, powertext=powertext)
 
     @http.expose
-    def tuner(self, frequency='', blend='0', mute='0', form=''):
-
-        # Trigger query actual power status to work around bug in C 425
-        self.Tuner.serial_send(self.Tuner.getter.POWER)
-        time.sleep(.5)
-
-        if form == "standby":
-            if self.Storage.standby:
-                self.Tuner.set_power_off()
-                http.log('Power Off')
-            else:
-                self.Tuner.set_power_on()
-                http.log('Power On')
-
+    def mute(self, mute='0'):
         if mute == 'on':
             http.log('Mute on selected')
             if not self.Storage.mute:
@@ -200,6 +174,8 @@ class WebTuner:
             self.Tuner.set_mute_off()
             http.log('Mute is off')
 
+    @http.expose
+    def blend(self, blend=''):
         if blend == 'on':
             http.log('Blend on selected')
             if not self.Storage.blend:
@@ -211,6 +187,12 @@ class WebTuner:
                 self.Tuner.set_blend_off()
                 http.log('Disable blend')
 
+    @http.expose
+    def tuner(self, frequency='', form=''):
+        # Trigger query actual power status to work around bug in C 425
+        self.Tuner.serial_send(self.Tuner.getter.POWER)
+        time.sleep(.5)
+
         if frequency:
             frequency = frequency.replace(',', '.')
             if self.Tuner.frequency != float(frequency):
@@ -221,6 +203,7 @@ class WebTuner:
 
     @http.expose
     def tune(self, step=''):
+        http.log('freq {}'.format(self.Storage.frequency))
         newfreq = self.Storage.frequency + float(step)
         self.Tuner.set_frequency_fm(frequency=newfreq)
         http.log('Frequency step change to: {}'.format(float(newfreq)))

@@ -3,88 +3,87 @@
 
 <head>
     <link rel="stylesheet" href="https://unpkg.com/purecss@2.1.0/build/pure-min.css"
-        integrity="sha384-yHIFVG6ClnONEA5yB5DJXfW2/KC173DIQrYoZMEtBvGzmf0PKiGyNEqe9N6BNDBH" crossorigin="anonymous">
+          integrity="sha384-yHIFVG6ClnONEA5yB5DJXfW2/KC173DIQrYoZMEtBvGzmf0PKiGyNEqe9N6BNDBH" crossorigin="anonymous">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"
-        integrity="sha384-vtXRMe3mGCbOeY7l30aIg8H9p3GdeSe4IFlP6G8JMa7o7lXvnz3GFKzPxzJdPfGK" crossorigin="anonymous">
+            integrity="sha384-vtXRMe3mGCbOeY7l30aIg8H9p3GdeSe4IFlP6G8JMa7o7lXvnz3GFKzPxzJdPfGK" crossorigin="anonymous">
     </script>
     <script src="https://kit.fontawesome.com/2543a239ab.js" crossorigin="anonymous"></script>
-    <script src="static/scripts/script.js"></script>
-    <link rel="stylesheet" href="static/css/style.css">
+    <script src="static/scripts/script.js" crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="static/css/style.css" crossorigin="anonymous">
     <title>Nad {{ tuner }} WebTuner</title>
 </head>
 
 <body>
-    <div class="pure-g">
-        <div class="pure-u-1-3">
-        </div>
-        <div class="pure-u-1-3">
-            <br>
-            <aside>
-                <p>
-                    <h1><i class="fa-solid fa-radio"></i> NAD {{ tuner }} WebTuner</h1>
-                </p>
-            </aside>
-            <br>
-            <fieldset>
-                <legend>RDS</legend>
-                <label for="aligned-name">PS:
-                </label>
-                <span id="rdsps"></span>
-                <br>
-                <label for="aligned-name">RT:
-                </label>
-                <span id="rdsrt"></span>
-            </fieldset>
-
-            <fieldset>
-                <legend>Frequency</legend>
-                <span id="frequency"></span>
-                <div class="pure-form pure-form-aligned">
-                    <button onclick="tune(step='-1')"><i class="fa-solid fa-angles-left"></i></button>
-                    <button onclick="tune(step='-.1')"><i class="fa-solid fa-arrow-left"></i></button>
-                    <button onclick="tune(step='.1')"><i class="fa-solid fa-arrow-right"></i></button>
-                    <button onclick="tune(step='1')"><i class="fa-solid fa-angles-right"></i></button>
-                </div>
-            </fieldset>
-            <fieldset>
-                <legend>Direct Frequency</legend>
-
-                <form class="pure-form pure-form-aligned" method="get" action="/tuner">
-                    <input onchange="this.form.submit()" type="text" name="frequency" id="aligned-name" class="pure-input"
-                        name="frequency" size="1" placeholder="000" /> Mhz
-                </form>
-            </fieldset>
-
-            <fieldset>
-                <legend>Stereo Settings</legend>
-
-                <form class="pure-form pure-form-aligned" method="get" action="/tuner">
-                    <label for="aligned-name">Mute: </label>
-                    <input onchange="this.form.submit()" type="checkbox" id="aligned-cb-mute" name="mute" {{ mute }} />
-                    <br>
-                    <label for="aligned-name">Blend:</label>
-                    <input onchange="this.form.submit()" type="checkbox" id="aligned-cb-blend" name="blend"
-                        {{ blend }} />
-                </form>
-            </fieldset>
-
-            <fieldset>
-                <legend>Tuner Standby</legend>
-
-                <form class="pure-form pure-form-aligned" method="get" action="/tuner">
-                    <button type="submit" name="form" value="standby" class="{{ powerstyle }}"><i
-                            class="fa-solid fa-power-off"></i> {{ powertext }}
-                    </button>
-                </form>
-            </fieldset>
-
-
-            <div class="pure-u-1-3">
-            </div>
-
-        </div>
+<div class="pure-g">
+    <div class="pure-u-1-3">
     </div>
+    <div class="pure-u-1-3">
+        <br>
+        <aside>
+            <p>
+            <h1><i class="fa-solid fa-radio"></i> NAD {{ tuner }} WebTuner</h1>
+            </p>
+        </aside>
+        <br>
+        <fieldset>
+            <legend>RDS</legend>
+            <label for="aligned-name">PS:
+            </label>
+            <span id="rdsps"></span>
+            <br>
+            <label for="aligned-name">RT:
+            </label>
+            <span id="rdsrt"></span>
+        </fieldset>
+
+        <fieldset>
+            <legend>Frequency</legend>
+            <span id="frequency">000 Mhz</span>
+            <div class="pure-form pure-form-aligned">
+                <button onclick="tune(step='-1')"><i class="fa-solid fa-angles-left"></i></button>
+                <button onclick="tune(step='-.1')"><i class="fa-solid fa-arrow-left"></i></button>
+                <button onclick="tune(step='.1')"><i class="fa-solid fa-arrow-right"></i></button>
+                <button onclick="tune(step='1')"><i class="fa-solid fa-angles-right"></i></button>
+            </div>
+        </fieldset>
+        <fieldset>
+            <legend>Direct Frequency</legend>
+
+            <form class="pure-form pure-form-aligned" method="get" action="/tuner">
+                <input onchange="this.form.submit()" type="text" name="frequency" id="aligned-name"
+                       class="pure-input" size="2" placeholder="000.00"/> Mhz
+            </form>
+        </fieldset>
+
+        <fieldset>
+            <legend>Stereo Settings</legend>
+
+            <form class="pure-form pure-form-aligned" method="get" action="/tuner">
+                <label for="aligned-name">Mute: </label>
+                <input onclick="set_mute()" type="checkbox" id="aligned-cb-mute" name="mute"/>
+                <br>
+                <label for="aligned-name">Blend: </label>
+                <input onclick="set_blend()" type="checkbox" id="aligned-cb-blend" name="blend"/>
+            </form>
+        </fieldset>
+
+        <fieldset>
+            <legend>Tuner Standby</legend>
+
+            <form class="pure-form pure-form-aligned" method="get" action="/tuner">
+                <button type="submit" name="form" value="standby" class="{{ powerstyle }}"><i
+                        class="fa-solid fa-power-off"></i> {{ powertext }}
+                </button>
+            </form>
+        </fieldset>
+
+
+        <div class="pure-u-1-3">
+        </div>
+
+    </div>
+</div>
 </body>
 
 </html>
