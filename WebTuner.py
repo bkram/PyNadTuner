@@ -95,15 +95,15 @@ class WebTuner:
                     #     'Serial Poller: RDS Text Update Position {} Value {}'.format(pos, content))
                     #
                     # if '^M' in str(response):
-                    #     # TODO: What do we need to do when we get a ^M, for now strip it out in the self.__rds_text__()
+                    # TODO: What do we need to do when we get a ^M,
+                    # for now strip it out in the self.__rds_text__()
                     self.Storage.rdsrt[pos] = content.decode(
                         'ascii', errors='ignore')
 
-            # TODO: frequency around 97.30-97.45 is still wrong
             if response[2] == 45:
                 if response[5] == 2:
                     freq_bytes = bytes([response[3], response[4]])
-                elif response[5] == 39:
+                elif response[5] in [35, 38, 39, 42]:
                     freq_bytes = bytes([response[4] - 64, response[5]])
                 else:
                     freq_bytes = bytes([response[4], response[5]])
@@ -147,7 +147,7 @@ class WebTuner:
         if self.Storage.standby:
             return {'frequency': '{0:.2f} Mhz'.format(self.Storage.frequency),
                     'rdsps': self.Storage.rdsps,
-                    'rdsrt': self.__rds_text__(),
+                    'rdsrt': self.__rds_text__().replace(' ', '&nbsp;'),
                     'blend': blend, 'mute': mute}
 
     @http.expose
@@ -188,7 +188,7 @@ class WebTuner:
                 http.log('Disable blend')
 
     @http.expose
-    def tuner(self, frequency='', form=''):
+    def tuner(self, frequency=''):
         # Trigger query actual power status to work around bug in C 425
         self.Tuner.serial_send(self.Tuner.getter.POWER)
         time.sleep(.5)
