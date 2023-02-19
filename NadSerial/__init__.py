@@ -58,6 +58,12 @@ class NadSetters:
         self.ENTER = bytes([1, 22, 197, 2, 36])
 
 
+def __crc_check__(command):
+    crc = sum(command) & 0xFF
+    crc = (crc ^ 0xFF) + 1
+    return command + bytes([2]) + bytes([crc])
+
+
 class Device:
     """
     A class to communicate with NAD C-425 and C-426 tuners.
@@ -103,6 +109,11 @@ class Device:
             else:
                 response = response + r
         return response
+
+    """
+    Returns an command with crc
+    :command: the command to crc without 0x02
+    """
 
     def serial_send(self, message):
         """
@@ -168,13 +179,7 @@ class Device:
                     self.getter.FM_FREQUENCY, responsecode=45)
                 if response is False:
                     continue
-                if response[5] == 2:
-                    freq_bytes = bytes([response[3], response[4]])
-                elif response[5] == 39:
-                    freq_bytes = bytes([response[4] - 64, response[5]])
-                else:
-                    freq_bytes = bytes([response[4], response[5]])
-                self.frequency = int.from_bytes(freq_bytes, "little") / 100
+                self.frequency = ((response[3] + 256 * response[4]) * 10) / 1000
                 break
 
         return self.frequency

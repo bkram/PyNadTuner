@@ -1,6 +1,5 @@
 import _thread
 import os
-import time
 
 import cherrypy as http
 import jinja2
@@ -43,6 +42,7 @@ class WebTuner:
         for i in sorted(self.Storage.rdsrt):
             result += self.Storage.rdsrt[i]
         return ''.join(result).replace('^M', '').replace('^@', '')
+        # return ''.join(result)  # .replace('^M', '').replace('^@', '')
 
     def serial_poller(self):
 
@@ -64,7 +64,6 @@ class WebTuner:
             if response[1] == 27:
                 if response[2] == 2:
                     ps = ''
-                    self.Storage.rdsrt = {}
                 else:
                     ps = response[2:10].decode('ascii', errors='ignore')
                     if debug:
@@ -73,14 +72,14 @@ class WebTuner:
 
             if response[1] == 28:
                 if len(response) == 4:
-                    # self.Storage.rdsrt = {}
+
                     self.Storage.rdsrt = {0: '    ', 4: '    ', 8: '    ', 12: '    ', 16: '    ', 20: '    ',
                                           24: '    ', 28: '    ', 32: '    ', 36: '    ', 40: '    ', 44: '    ',
-                                          48: '    ', 52: '    ', 56: '    ', 60: '    ', 64: '    ', 68: '    ',
-                                          72: '    ', 76: '    '}
+                                          48: '    ', 52: '    ', 56: '    ', 60: '    '}
 
                     if debug:
                         http.log('Serial Poller: RDS Text Update Reset')
+                    http.log('Serial Poller: RDS Text Update Reset')
                 else:
                     if response[2] == 94:
                         pos = response[3] - 64
@@ -91,6 +90,17 @@ class WebTuner:
                     if debug:
                         http.log(
                             'Serial Poller: RDS Text Pos {} Test {}'.format(pos, content))
+                    # if '^M' in content.decode('ascii', errors='ignore'):
+                    #     http.log(str(pos))
+                    # for k in self.Storage.rdsrt:
+                    #     if k >= pos:
+                    #         del self.Storage.rdsrt[k]
+
+                    #     self.Storage.rdsrt = {0: '    ', 4: '    ', 8: '    ', 12: '    ', 16: '    ', 20: '    ',
+                    #                           24: '    ', 28: '    ', 32: '    ', 36: '    ', 40: '    ', 44: '    ',
+                    #                           48: '    ', 52: '    ', 56: '    ', 60: '    '}
+
+                    http.log(self.__rds_text__())
                     # http.log(
                     #     'Serial Poller: RDS Text Update Position {} Value {}'.format(pos, content))
                     #
@@ -101,13 +111,8 @@ class WebTuner:
                         'ascii', errors='ignore')
 
             if response[2] == 45:
-                if response[5] == 2:
-                    freq_bytes = bytes([response[3], response[4]])
-                elif response[5] in [35, 38, 39, 42]:
-                    freq_bytes = bytes([response[4] - 64, response[5]])
-                else:
-                    freq_bytes = bytes([response[4], response[5]])
-                frequency = int.from_bytes(freq_bytes, "little") / 100
+                frequency = ((response[3] + 256 * response[4]) * 10) / 1000
+                print(response[3], response[4])
                 self.Storage.frequency = frequency
                 if debug:
                     http.log('Serial Poller: Frequency Update: {}'.format(frequency))
@@ -147,7 +152,7 @@ class WebTuner:
         if self.Storage.standby:
             return {'frequency': '{0:.2f} Mhz'.format(self.Storage.frequency),
                     'rdsps': self.Storage.rdsps,
-                    'rdsrt': self.__rds_text__().replace(' ', '&nbsp;'),
+                    'rdsrt': self.__rds_text__().rstrip(' ').replace(' ', '&nbsp;'),
                     'blend': blend, 'mute': mute}
 
     @http.expose
@@ -190,8 +195,8 @@ class WebTuner:
     @http.expose
     def tuner(self, frequency=''):
         # Trigger query actual power status to work around bug in C 425
-        self.Tuner.serial_send(self.Tuner.getter.POWER)
-        time.sleep(.5)
+        # self.Tuner.serial_send(self.Tuner.getter.POWER)
+        # time.sleep(.5)
 
         if frequency:
             frequency = frequency.replace(',', '.')

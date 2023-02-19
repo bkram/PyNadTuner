@@ -23,7 +23,6 @@
         <aside>
             <p>
             <h1><i class="fa-solid fa-radio"></i> NAD {{ tuner }} WebTuner</h1>
-            </p>
         </aside>
         <br>
         <fieldset>
@@ -52,7 +51,7 @@
 
             <form class="pure-form pure-form-aligned" method="get" action="/tuner">
                 <input onchange="this.form.submit()" type="text" name="frequency" id="aligned-name"
-                       class="pure-input" size="2" placeholder="000.00"/> Mhz
+                       class="pure-input" size="6" placeholder="000.00"/> Mhz
             </form>
         </fieldset>
 
@@ -60,7 +59,7 @@
             <legend>Stereo Settings</legend>
 
             <form class="pure-form pure-form-aligned" method="get" action="/tuner">
-                <label for="aligned-name">Mute: </label>
+                <label for="aligned-name">Mute:&nbsp;</label>
                 <input onclick="set_mute()" type="checkbox" id="aligned-cb-mute" name="mute"/>
                 <br>
                 <label for="aligned-name">Blend: </label>
@@ -68,15 +67,15 @@
             </form>
         </fieldset>
 
-        <fieldset>
-            <legend>Tuner Standby</legend>
+        <!--        <fieldset>-->
+        <!--            <legend>Tuner Standby</legend>-->
 
-            <form class="pure-form pure-form-aligned" method="get" action="/tuner">
-                <button type="submit" name="form" value="standby" class="{{ powerstyle }}"><i
-                        class="fa-solid fa-power-off"></i> {{ powertext }}
-                </button>
-            </form>
-        </fieldset>
+        <!--            <form class="pure-form pure-form-aligned" method="get" action="/tuner">-->
+        <!--                <button type="submit" name="form" value="standby" class="{{ powerstyle }}"><i-->
+        <!--                        class="fa-solid fa-power-off"></i> {{ powertext }}-->
+        <!--                </button>-->
+        <!--            </form>-->
+        <!--        </fieldset>-->
 
 
         <div class="pure-u-1-3">
