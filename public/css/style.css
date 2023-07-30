@@ -1,0 +1,47 @@
+aside,
+.button-success,
+.button-error,
+.button-neutral {
+    color: white;
+    border-radius: 4px;
+    text-shadow: 0 1px 1px rgba(0, 0, 0, 0.2);
+}
+
+.button-success {
+    background: rgb(28, 184, 65);
+}
+
+.button-error {
+    background: rgb(202, 60, 60);
+}
+
+.button-neutral {
+    background: rgb(59, 70, 228);
+}
+
+.pure-u-1,
+h1 {
+    text-align: center;
+}
+
+.pure-u-1 {
+    padding: 1em;
+}
+
+aside {
+    background: #000;
+    padding: .1em 1em;
+}
+
+/*
+When setting the primary font stack, apply it to the Pure grid units along
+with "html", "button", "input", "select", and "textarea". Pure Grids use
+specific font stacks to ensure the greatest OS/browser compatibility.
+*/
+html, button, input, select, textarea,
+.pure-g [class *= "pure-u"] {
+    /* Set your content font stack here: */
+    font-family: monospace;
+
+
+}
