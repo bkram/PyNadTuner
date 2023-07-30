@@ -58,10 +58,11 @@ class NadSetters:
         self.ENTER = bytes([1, 22, 197, 2, 36])
 
 
-def __crc_check__(command):
+def crc_check(command):
     crc = sum(command) & 0xFF
     crc = (crc ^ 0xFF) + 1
     return command + bytes([2]) + bytes([crc])
+    # return command + bytes([crc])
 
 
 class Device:
@@ -142,6 +143,14 @@ class Device:
             attempts += 1
         return False
 
+    @staticmethod
+    def bytes_to_frequency(freq_bytes):
+        if freq_bytes[3] == 94:
+            frequency_value = int.from_bytes(freq_bytes[4:6], byteorder='little')
+        else:
+            frequency_value = int.from_bytes(freq_bytes[3:5], byteorder='little')
+        return frequency_value / 100.0  # Frequency is represented in hundredths of MHz
+
     def get_band(self):
         """
         Get the current operation band
@@ -179,8 +188,17 @@ class Device:
                     self.getter.FM_FREQUENCY, responsecode=45)
                 if response is False:
                     continue
-                self.frequency = ((response[3] + 256 * response[4]) * 10) / 1000
-                break
+                if response[2] == 45:
+                    if response[5] == 2:
+                        freq_bytes = bytes([response[3], response[4]])
+                    elif response[5] in [35, 38, 39, 42, 94] or (response[3] == 94 and response[4] != 94):
+                        freq_bytes = bytes([response[4] - 64, response[5]])
+                    else:
+                        freq_bytes = bytes([response[4], response[5]])
+
+                    frequency = int.from_bytes(freq_bytes, "little") / 100
+
+                return frequency
 
         return self.frequency
 
@@ -223,39 +241,48 @@ class Device:
             self.power = True
         return self.power
 
+    @staticmethod
+    def frequency_to_bytes(frequency):
+        """
+        Calculcate the frequency in bytes
+            :param frequency:
+        :return: the frequency in bytes
+        """
+        freq_int = int(frequency * 100)
+        freq_bytes = freq_int.to_bytes(2, byteorder='little')
+        return freq_bytes
+
+    @staticmethod
+    def crc_calculate(crc_command):
+        crc_calc = sum(crc_command) & 0xFF
+        crc_calc = (crc_calc ^ 0xFF) + 1
+        return bytes([crc_calc])
+
     def set_frequency_fm(self, frequency):
         """
         Sets the frequency
         :param frequency:
         :return: the set frequency
         """
-        # if frequency < 100:
-        #     # self.serial_send(self.setter.DIGIT_0)
-        #     pass
-        for c in str(round(frequency * 100)):
-            if c == "0":
-                self.serial_send(self.setter.DIGIT_0)
-            if c == "1":
-                self.serial_send(self.setter.DIGIT_1)
-            if c == "2":
-                self.serial_send(self.setter.DIGIT_2)
-            if c == "3":
-                self.serial_send(self.setter.DIGIT_3)
-            if c == "4":
-                self.serial_send(self.setter.DIGIT_4)
-            if c == "5":
-                self.serial_send(self.setter.DIGIT_5)
-            if c == "6":
-                self.serial_send(self.setter.DIGIT_6)
-            if c == "7":
-                self.serial_send(self.setter.DIGIT_7)
-            if c == "8":
-                self.serial_send(self.setter.DIGIT_8)
-            if c == "9":
-                self.serial_send(self.setter.DIGIT_9)
-            sleep(1 / 20)
-            # self.serial_send(self.setter.ENTER)
+        bytes_data = self.frequency_to_bytes(frequency=frequency)
+        command = bytes([1, 21, 45, bytes_data[0], bytes_data[1]])
+        crc = self.crc_calculate(command)
+
+        if bytes_data[0] == 94:
+            command = bytes([1, 21, 45, bytes_data[0], bytes_data[0], bytes_data[1]])
+            send_command = command + bytes([2]) + crc
+        elif bytes_data[0] in [60, 58, 56, 54]:
+            command = bytes([1, 21, 45, bytes_data[0], bytes_data[1]])
+            send_command = command + bytes([2]) + crc + bytes([94])
+        elif bytes_data[0] == 2:
+            command = bytes([1, 21, 45, 94, bytes_data[0] + 64, bytes_data[1]])
+            send_command = command + bytes([2]) + crc
+        else:
+            send_command = command + bytes([2]) + crc
+
+        self.serial_send(send_command)
         self.frequency = frequency
+
         return self.frequency
 
     def set_power_on(self):

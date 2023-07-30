@@ -46,7 +46,7 @@ class WebTuner:
 
     def serial_poller(self):
 
-        debug = False
+        debug = True
         if debug:
             http.log('Serial Poller: Started')
         while 1:
@@ -111,9 +111,16 @@ class WebTuner:
                         'ascii', errors='ignore')
 
             if response[2] == 45:
-                frequency = ((response[3] + 256 * response[4]) * 10) / 1000
-                print(response[3], response[4])
+                if response[5] == 2:
+                    freq_bytes = bytes([response[3], response[4]])
+                elif response[5] in [35, 38, 39, 42, 94] or (response[3] == 94 and response[4] != 94):
+                    freq_bytes = bytes([response[4] - 64, response[5]])
+                else:
+                    freq_bytes = bytes([response[4], response[5]])
+
+                frequency = int.from_bytes(freq_bytes, "little") / 100
                 self.Storage.frequency = frequency
+
                 if debug:
                     http.log('Serial Poller: Frequency Update: {}'.format(frequency))
 
@@ -209,9 +216,12 @@ class WebTuner:
     @http.expose
     def tune(self, step=''):
         http.log('freq {}'.format(self.Storage.frequency))
-        newfreq = self.Storage.frequency + float(step)
-        self.Tuner.set_frequency_fm(frequency=newfreq)
-        http.log('Frequency step change to: {}'.format(float(newfreq)))
+
+        newfreq = round(self.Storage.frequency + float(step), 2)
+        print(self.Tuner.frequency)
+        if 108 >= newfreq >= 87.50:
+            self.Tuner.set_frequency_fm(frequency=newfreq)
+            http.log('Frequency step change to: {}'.format(newfreq))
 
 
 if __name__ == "__main__":
