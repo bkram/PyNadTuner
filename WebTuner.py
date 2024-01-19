@@ -42,14 +42,13 @@ class WebTuner:
         for i in sorted(self.Storage.rdsrt):
             result += self.Storage.rdsrt[i]
         return ''.join(result).replace('^M', '').replace('^@', '')
-        # return ''.join(result)  # .replace('^M', '').replace('^@', '')
 
     def serial_poller(self):
 
         debug = True
         if debug:
             http.log('Serial Poller: Started')
-        while 1:
+        while True:
             response = self.Tuner.__read_bytes__()
 
             if response[2] == 21:
@@ -100,15 +99,16 @@ class WebTuner:
                     #                           24: '    ', 28: '    ', 32: '    ', 36: '    ', 40: '    ', 44: '    ',
                     #                           48: '    ', 52: '    ', 56: '    ', 60: '    '}
 
-                    http.log(self.__rds_text__())
-                    # http.log(
-                    #     'Serial Poller: RDS Text Update Position {} Value {}'.format(pos, content))
+
+                    http.log(
+                        'Serial Poller: RDS Text Update Position {} Value {}'.format(pos, content))
                     #
                     # if '^M' in str(response):
                     # TODO: What do we need to do when we get a ^M,
                     # for now strip it out in the self.__rds_text__()
                     self.Storage.rdsrt[pos] = content.decode(
                         'ascii', errors='ignore')
+                    http.log(f"New RT: {self.__rds_text__()}")
 
             if response[2] == 45:
                 if response[5] == 2:
@@ -157,7 +157,7 @@ class WebTuner:
             mute = 'Disabled'
 
         if self.Storage.standby:
-            return {'frequency': '{0:.2f} Mhz'.format(self.Storage.frequency),
+            return {'frequency': '{0:.2f}'.format(self.Storage.frequency),
                     'rdsps': self.Storage.rdsps,
                     'rdsrt': self.__rds_text__().rstrip(' ').replace(' ', '&nbsp;'),
                     'blend': blend, 'mute': mute}

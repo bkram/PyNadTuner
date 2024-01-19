@@ -258,6 +258,9 @@ class Device:
         crc_calc = (crc_calc ^ 0xFF) + 1
         return bytes([crc_calc])
 
+
+
+
     def set_frequency_fm(self, frequency):
         """
         Sets the frequency

@@ -5,9 +5,8 @@
     <link rel="stylesheet" href="https://unpkg.com/purecss@2.1.0/build/pure-min.css"
           integrity="sha384-yHIFVG6ClnONEA5yB5DJXfW2/KC173DIQrYoZMEtBvGzmf0PKiGyNEqe9N6BNDBH" crossorigin="anonymous">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"
-            integrity="sha384-vtXRMe3mGCbOeY7l30aIg8H9p3GdeSe4IFlP6G8JMa7o7lXvnz3GFKzPxzJdPfGK" crossorigin="anonymous">
-    </script>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo="
+            crossorigin="anonymous"></script>
     <script src="https://kit.fontawesome.com/2543a239ab.js" crossorigin="anonymous"></script>
     <script src="static/scripts/script.js" crossorigin="anonymous"></script>
     <link rel="stylesheet" href="static/css/style.css" crossorigin="anonymous">
@@ -38,13 +37,15 @@
 
         <fieldset>
             <legend>Frequency</legend>
-            <span id="frequency">000 Mhz</span>
+            <span id="frequency-span"> Mhz</span>
             <div class="pure-form pure-form-aligned">
                 <button onclick="tune(step='-1')"><i class="fa-solid fa-angles-left"></i></button>
                 <button onclick="tune(step='-.1')"><i class="fa-solid fa-arrow-left"></i></button>
                 <button onclick="tune(step='.1')"><i class="fa-solid fa-arrow-right"></i></button>
                 <button onclick="tune(step='1')"><i class="fa-solid fa-angles-right"></i></button>
             </div>
+
+
         </fieldset>
         <fieldset>
             <legend>Direct Frequency</legend>
@@ -66,18 +67,6 @@
                 <input onclick="set_blend()" type="checkbox" id="aligned-cb-blend" name="blend"/>
             </form>
         </fieldset>
-
-        <!--        <fieldset>-->
-        <!--            <legend>Tuner Standby</legend>-->
-
-        <!--            <form class="pure-form pure-form-aligned" method="get" action="/tuner">-->
-        <!--                <button type="submit" name="form" value="standby" class="{{ powerstyle }}"><i-->
-        <!--                        class="fa-solid fa-power-off"></i> {{ powertext }}-->
-        <!--                </button>-->
-        <!--            </form>-->
-        <!--        </fieldset>-->
-
-
         <div class="pure-u-1-3">
         </div>
 
